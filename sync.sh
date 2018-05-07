@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# sync.sh - Sync the working application with remote data sources.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# sync.sh - Sync the local resources  with remote data sources.
 # Created: 2018-05-03
 
 set -euo pipefail

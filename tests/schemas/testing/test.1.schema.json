@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "properties": {
+        "payload": {
+            "type": "object",
+            "properties": {
+                "foo": {"type": "boolean"},
+                "bar": {"type": "integer"},
+                "baz": {"type": "string"}
+            },
+            "required": ["foo", "bar"]
+        }
+    },
+    "required": ["payload"]
+}

@@ -1,5 +1,4 @@
-import json
-
+import rapidjson as json
 import pytest
 from app import app
 

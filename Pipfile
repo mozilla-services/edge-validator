@@ -6,9 +6,10 @@ name = "pypi"
 [packages]
 Flask = "*"
 jsonschema = "*"
+python-rapidjson = "*"
 
 [dev-packages]
 pytest = "*"
 
 [requires]
-python_version = "2.7"
+python_version = "3.6"

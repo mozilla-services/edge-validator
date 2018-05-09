@@ -1,6 +1,6 @@
-import json
 import os
 import time
+import rapidjson as json
 from app import app
 
 
@@ -25,7 +25,7 @@ def validate_sample(namespace, name, messages):
         "Total: {}\t"
         "Time: {:.1f} seconds\t"
         "DocType: {}.{}"
-        .format(err_rate, total, namespace, name, end-start)
+        .format(err_rate, total, end-start, namespace, name)
     )
 
 

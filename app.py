@@ -2,12 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 import os
 
 from flask import Flask, request
-from jsonschema import validate
-from jsonschema.exceptions import ValidationError
+import rapidjson
 
 app = Flask(__name__)
 
@@ -27,7 +25,7 @@ def load_system_schemas(base, system_id):
                 continue
             with open(os.path.join(root, name), "r") as f:
                 key = name.split(".schema.json")[0]
-                schemas[key] = json.load(f)
+                schemas[key] = rapidjson.Validator(f.read())
                 print("Registered {} schema with name {} ".format(system_id, key))
     return schemas
 
@@ -39,7 +37,7 @@ def load_data():
     """
 
     # https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/common-ping.html
-    common_schema = {
+    common_schema = rapidjson.Validator(rapidjson.dumps({
             "properties": {
                 "type": {"type": "string"},
                 "id": {"type": "string"},
@@ -47,7 +45,7 @@ def load_data():
                 "version": {"type": "integer"},
                 },
             "required": ["type", "id", "creationDate", "version"],
-            }
+            }))
 
     # Schemas have a naming convention. See `sync.sh` for an example of the ingestion
     # submission format.
@@ -64,19 +62,19 @@ def load_data():
 
 @app.route('/<system_id>', methods=['POST'])
 def index(system_id):
+    # equivalent to `json.loads(request.data)`
     content = request.get_json()
-    
+
     resp = ('OK', 200)
     try:
         # validate against the common ping format
-        validate(content, common_schema)
-        key = "{}.{}".format(content["type"], content["version"])
+        common_schema(request.data)
 
         # validate the schema based on mozilla-pipeline-schemas
-        schema = schemas[system_id][key]
-        validate(content, schema)
-    except (ValidationError, KeyError) as e:
-        resp = ("BAD: {}".format(e.message), 400)
+        key = "{}.{}".format(content["type"], content["version"])
+        schemas[system_id][key](request.data)
+    except (ValueError, KeyError) as e:
+        resp = ("BAD: {}".format(e), 400)
     return resp
 
 

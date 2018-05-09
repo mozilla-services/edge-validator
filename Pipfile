@@ -8,6 +8,7 @@ Flask = "*"
 jsonschema = "*"
 
 [dev-packages]
+pytest = "*"
 
 [requires]
 python_version = "2.7"

@@ -16,14 +16,20 @@ SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:-"net-mozaws-prod-us-west-2-pipeline-analys
 SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v1"}
 MPS_ROOT=${MPS_ROOT:-"./mozilla-pipeline-schemas"}
 OUTPUT_PATH=${OUTPUT_PATH:-"resources"}
+INCLUDE_TESTS=${INCLUDE_TESTS:-"true"}
 
 data_path="${OUTPUT_PATH}/data"
 schema_path="${OUTPUT_PATH}/schemas"
 
 # Create the resource directory if not exists.
-if [[ ! -d ${OUTPUT_PATH} ]]; then
-    echo "Creating the resource path: ${OUTPUT_PATH}"
-    mkdir ${OUTPUT_PATH}
+if [[ ! -d ${data_path} ]]; then
+    echo "Creating the resource path: ${data_path}"
+    mkdir -p ${data_path}
+fi
+
+if [[ ! -d ${schema_path} ]]; then
+    echo "Creating the resource path: ${schema_path}"
+    mkdir -p ${schema_path}
 fi
 
 function sync_data {
@@ -86,10 +92,16 @@ function sync_schema {
         git log -n 1
         popd
     fi
-    
-    cp --recursive ${src_schema_path} ${schema_path}
+
+    cp --recursive --verbose ${src_schema_path}/* ${schema_path}/
+}
+
+function copy_test_schema {
+    echo "Copying testing schemas"
+    cp --recursive --verbose tests/schemas/* ${schema_path}/
 }
 
 sync_data
 sync_schema
+if [[ "${INCLUDE_TESTS}" == true ]]; then copy_test_schema; fi
 

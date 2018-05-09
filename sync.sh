@@ -98,9 +98,10 @@ function sync_schema {
 
 function copy_test_schema {
     echo "Copying testing schemas"
-    cp --recursive --verbose tests/schemas/* ${schema_path}/
+    cp --recursive --verbose tests/resources/schemas/* ${schema_path}/
 }
 
+# TODO: only sync data if aws is properly configured
 sync_data
 sync_schema
 if [[ "${INCLUDE_TESTS}" == true ]]; then copy_test_schema; fi

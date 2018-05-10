@@ -105,4 +105,3 @@ function copy_test_schema {
 sync_schema
 if [[ "${INCLUDE_DATA}" == true ]]; then sync_data; fi
 if [[ "${INCLUDE_TESTS}" == true ]]; then copy_test_schema; fi
-

@@ -7,6 +7,7 @@ name = "pypi"
 Flask = "*"
 python-rapidjson = "*"
 gunicorn = "*"
+dockerflow = "*"
 
 [dev-packages]
 pytest = "*"

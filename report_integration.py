@@ -8,14 +8,17 @@ import requests
 
 import rapidjson as json
 
-if os.environ.get("DOCKER_TEST"):
+if os.environ.get("EXTERNAL"):
+    host = os.environ.get("HOST", "localhost")
+    port = os.environ.get("PORT", 5000)
+
     class Client:
         @staticmethod
         def post(route, data, content_type):
-            headers={'content-type': content_type}
-            return requests.post("http://localhost:8000" + route,
-                                 data=data,
-                                 headers=headers)
+            headers = {'content-type': content_type}
+            uri = "http://{}:{}{}".format(host, port, route)
+            return requests.post(uri, data=data, headers=headers)
+
     client = Client()
 else:
     from app import app
@@ -29,7 +32,7 @@ def validate_sample(namespace, name, messages):
     for msg in messages:
         route = '/' + namespace
         rv = client.post(route,
-                         data=msg,
+                         data=msg.encode('utf-8'),
                          content_type='application/json')
         fail += int(rv.status_code == 400)
     end = time.time()

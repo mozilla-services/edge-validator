@@ -6,8 +6,11 @@ import os
 
 import rapidjson
 from flask import Flask, request
+from dockerflow.flask import Dockerflow
+
 
 app = Flask(__name__)
+dockerflow = Dockerflow(app)
 
 
 def load_namespace(base, namespace):
@@ -49,7 +52,6 @@ def load_data():
     # Schemas have a naming convention. See `sync.sh` for an example of the ingestion
     # submission format.
     schemas = {}
-
 
     # List the separate data ingestion namespaces
     base = "resources/schemas"

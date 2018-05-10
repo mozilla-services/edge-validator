@@ -4,12 +4,23 @@
 
 import os
 import time
+import requests
+
 import rapidjson as json
-from app import app
 
-
-app.config['TESTING'] = True
-client = app.test_client()
+if os.environ.get("DOCKER_TEST"):
+    class Client:
+        @staticmethod
+        def post(route, data, content_type):
+            headers={'content-type': content_type}
+            return requests.post("http://localhost:8000" + route,
+                                 data=data,
+                                 headers=headers)
+    client = Client()
+else:
+    from app import app
+    app.config['TESTING'] = True
+    client = app.test_client()
 
 
 def validate_sample(namespace, name, messages):

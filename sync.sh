@@ -16,6 +16,7 @@ SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:-"net-mozaws-prod-us-west-2-pipeline-analys
 SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v1"}
 MPS_ROOT=${MPS_ROOT:-"./mozilla-pipeline-schemas"}
 OUTPUT_PATH=${OUTPUT_PATH:-"resources"}
+INCLUDE_DATA=${INCLUDE_DATA:-"true"}
 INCLUDE_TESTS=${INCLUDE_TESTS:-"true"}
 
 data_path="${OUTPUT_PATH}/data"
@@ -89,7 +90,7 @@ function sync_schema {
     # print out branch information if applicable
     if [[ -e "${MPS_ROOT}/.git" ]]; then
         pushd .; cd ${MPS_ROOT}
-        git log -n 1
+        git --no-pager log -n1
         popd
     fi
 
@@ -101,8 +102,7 @@ function copy_test_schema {
     cp --recursive --verbose tests/resources/schemas/* ${schema_path}/
 }
 
-# TODO: only sync data if aws is properly configured
-sync_data
 sync_schema
+if [[ "${INCLUDE_DATA}" == true ]]; then sync_data; fi
 if [[ "${INCLUDE_TESTS}" == true ]]; then copy_test_schema; fi
 

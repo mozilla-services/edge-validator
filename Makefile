@@ -1,9 +1,16 @@
 sync:
 	pipenv sync --dev
-	bash sync.sh
+	INCLUDE_DATA=false bash sync.sh
 
 test:
 	pipenv run python -m pytest tests/
 
 report:
+	INCLUDE_DATA=true bash sync.sh
 	pipenv run python report_integration.py
+
+build: sync
+	docker build -t edge-validator:latest .
+
+run:
+	docker run -p 8000:8000 edge-validator:latest

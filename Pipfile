@@ -6,8 +6,8 @@ name = "pypi"
 [packages]
 Flask = "*"
 python-rapidjson = "*"
-gunicorn = "*"
 dockerflow = "*"
+blinker = "*"
 
 [dev-packages]
 pytest = "*"

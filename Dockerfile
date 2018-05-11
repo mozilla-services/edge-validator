@@ -19,5 +19,6 @@ RUN chown -R app:app /app
 COPY . /app
 
 # start userland
+USER app
 RUN pipenv sync
-CMD pipenv run gunicorn -b 0.0.0.0:$PORT app:app
+CMD pipenv run flask run --host 0.0.0.0 --port $PORT

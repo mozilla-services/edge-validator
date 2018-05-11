@@ -1,5 +1,3 @@
-.git
 .idea
-mozilla-pipeline-schema/
 .pytest_cache
-resources/data
+/resources

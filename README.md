@@ -4,7 +4,7 @@ A service-endpoint for validating pings against `mozilla-pipeline-schemas`.
 
 See [bug 1452166](https://bugzilla.mozilla.org/show_bug.cgi?id=1452166) for motivating background.
 
-## User Guid
+## User Guide
 ### Installation
 
 ```bash
@@ -26,8 +26,8 @@ $ make sync
 #### serving via docker host (recommended)
 
 ```bash
-$ docker --version  # ensure that docker is installed
-$ make run          # start the service
+$ docker --version          # ensure that docker is installed
+$ make serve                # start the service
 ```
 
 #### serving via local host

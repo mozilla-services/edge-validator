@@ -12,5 +12,5 @@ report:
 build: sync
 	docker build -t edge-validator:latest .
 
-run:
+serve:
 	docker run -p 8000:8000 -it edge-validator:latest

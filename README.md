@@ -2,6 +2,8 @@
 
 A service-endpoint for validating pings against `mozilla-pipeline-schemas`.
 
+[![CircleCI](https://circleci.com/gh/acmiyaguchi/edge-validator.svg?style=svg)](https://circleci.com/gh/acmiyaguchi/edge-validator)
+
 See [bug 1452166](https://bugzilla.mozilla.org/show_bug.cgi?id=1452166) for motivating background.
 
 ## User Guide

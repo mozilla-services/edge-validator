@@ -10,7 +10,7 @@ jobs:
   build:
     docker:
       - image: docker:18.02.0-ce-git
-    working_directory: /edge-validator
+    working_directory: /app
     steps:
       - checkout
       - run: git submodule sync
@@ -55,16 +55,13 @@ jobs:
       - run:
           name: Test Code
           command: |
-            mkdir test-reports
-            chown -R 10001:10001 test-reports
-            docker run -v test-reports:/app/ -it app:build \
-              pipenv run \
+            container_id="$(docker run -tid app:build)"
+            docker exec "${container_id}" pipenv run \
                 python -m pytest --junitxml=test-reports/junit.xml tests/
+            docker cp "${container_id}":/app/test-reports test-reports
+            docker stop "${container_id}"
 
       - store_test_results:
-          path: test-reports
-
-      - store_artifacts:
           path: test-reports
 
   deploy:

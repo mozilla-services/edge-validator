@@ -29,15 +29,16 @@ else:
 def validate_sample(namespace, name, messages):
     start = time.time()
     fail = 0
+    doctype = name.split('.batch.json')[0]
     for msg in messages:
-        route = '/' + namespace
+        route = '/submit/{}/{}'.format(namespace, doctype)
         rv = client.post(route,
                          data=msg.encode('utf-8'),
                          content_type='application/json')
-        fail += int(rv.status_code == 400)
+        fail += int(rv.status_code != 200)
     end = time.time()
     total = len(messages)
-    err_rate = fail/float(total)
+    err_rate = fail/float(total)*100
     print(
         "ErrorRate: {:.2f}%\t"
         "Total: {}\t"

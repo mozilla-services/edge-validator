@@ -38,46 +38,39 @@ def load_data():
     See https://stackoverflow.com/a/42440784
     """
 
-    # https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/common-ping.html
-    common_schema = rapidjson.Validator(rapidjson.dumps({
-            "properties": {
-                "type": {"type": "string"},
-                "id": {"type": "string"},
-                "creationDate": {"type": "string"},
-                "version": {"type": "integer"},
-                },
-            "required": ["type", "id", "creationDate", "version"],
-            }))
-
     # Schemas have a naming convention. See `sync.sh` for an example of the ingestion
     # submission format.
     schemas = {}
 
     # List the separate data ingestion namespaces
     base = "resources/schemas"
-    for system_id in os.listdir("resources/schemas"):
-        schemas[system_id] = load_namespace(base, system_id)
+    for namespace in os.listdir("resources/schemas"):
+        schemas[namespace] = load_namespace(base, namespace)
 
-    return common_schema, schemas
+    versions = {}
+    for namespace in schemas.keys():
+        ns_version = {}
+        for key in schemas[namespace].keys():
+            doctype, docversion = key.split('.')
+            # take the most recent version determined by string comparison
+            ns_version[doctype] = max(versions.get(doctype, '0'), docversion)
+        versions[namespace] = ns_version
+
+    return schemas, versions
 
 
-COMMON_SCHEMA, NAMESPACE_SCHEMAS = load_data()
+NAMESPACE_SCHEMAS, SCHEMA_VERSIONS = load_data()
 
 
-@app.route('/<namespace>', methods=['POST'])
-def index(namespace):
-    # equivalent to `json.loads(request.data)`
-    content = request.get_json()
-
+@app.route('/submit/<namespace>/<doctype>',  methods=['POST'])
+@app.route('/submit/<namespace>/<doctype>/<docversion>', methods=['POST'])
+def submit(namespace, doctype, docversion=None):
     resp = ('OK', 200)
     try:
-        # validate against the common ping format
-        COMMON_SCHEMA(request.data)
-
-        key = "{}.{}".format(content["type"], content["version"])
+        docversion = docversion or SCHEMA_VERSIONS[namespace][doctype]
+        key = "{}.{}".format(doctype, docversion)
         NAMESPACE_SCHEMAS[namespace][key](request.data)
     except (ValueError, KeyError) as e:
         resp = ("BAD: {}".format(e), 400)
     return resp
-
 

@@ -29,7 +29,14 @@ def ping():
 
 
 def test_server_mounts_testing_namespace(client, ping):
-    rv = client.post('/testing',
+    rv = client.post('/submit/testing/test/1',
+                     data=json.dumps(ping),
+                     content_type='application/json')
+    assert rv.status_code == 200
+
+
+def test_server_redirects_missing_version(client, ping):
+    rv = client.post('/submit/testing/test',
                      data=json.dumps(ping),
                      content_type='application/json')
     assert rv.status_code == 200
@@ -37,15 +44,15 @@ def test_server_mounts_testing_namespace(client, ping):
 
 def test_ping_omit_type(client, ping):
     del ping["type"]
-    rv = client.post('/testing',
+    rv = client.post('/submit/testing',
                      data=json.dumps(ping),
                      content_type='application/json')
-    assert rv.status_code == 400
+    assert rv.status_code == 404
 
 
 def test_ping_omit_payload(client, ping):
     del ping["payload"]
-    rv = client.post('/testing',
+    rv = client.post('/submit/testing/test/1',
                      data=json.dumps(ping),
                      content_type='application/json')
     assert rv.status_code == 400
@@ -53,7 +60,7 @@ def test_ping_omit_payload(client, ping):
 
 def test_ping_omit_required(client, ping):
     del ping["payload"]["foo"]
-    rv = client.post('/testing',
+    rv = client.post('/submit/testing/test/1',
                      data=json.dumps(ping),
                      content_type='application/json')
     assert rv.status_code == 400
@@ -61,7 +68,7 @@ def test_ping_omit_required(client, ping):
 
 def test_ping_omit_optional(client, ping):
     del ping["payload"]["baz"]
-    rv = client.post('/testing',
+    rv = client.post('/submit/testing/test/1',
                      data=json.dumps(ping),
                      content_type='application/json')
     assert rv.status_code == 200
@@ -69,7 +76,7 @@ def test_ping_omit_optional(client, ping):
 
 def test_ping_wrong_type(client, ping):
     ping["payload"]["baz"]
-    rv = client.post('/testing',
+    rv = client.post('/submit/testing/test/1',
                      data=json.dumps(ping),
                      content_type='application/json')
     assert rv.status_code == 200

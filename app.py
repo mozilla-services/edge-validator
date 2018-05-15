@@ -62,10 +62,39 @@ def load_data():
 NAMESPACE_SCHEMAS, SCHEMA_VERSIONS = load_data()
 
 
-@app.route('/submit/<namespace>/<doctype>',  methods=['POST'])
-@app.route('/submit/<namespace>/<doctype>/<docversion>', methods=['POST'])
-def submit(namespace, doctype, docversion=None):
+def build_route(endpoint, params):
+    return '/'.join([endpoint] + params)
+
+
+telemetry_ingestion = [
+    '<namespace>',          # generally `telemetry` in this context
+    '<uuid:docid>',         # used for document de-duplication
+    '<doctype>',
+    '<appName>',
+    '<appVersion>',
+    '<appUpdateChannel>',
+    '<appBuildId>',
+]
+
+generic_ingestion = [
+    '<namespace>',
+    '<doctype>',
+    '<int:docversion>',
+    '<uuid:docid>',
+]
+
+
+@app.route(build_route('/submit', telemetry_ingestion), methods=['POST'])
+# the validation API is tolerant of missing docversion and docid
+@app.route(build_route('/submit', generic_ingestion[:-2]),  methods=['POST'])
+@app.route(build_route('/submit', generic_ingestion[:-1]),  methods=['POST'])
+@app.route(build_route('/submit', generic_ingestion),  methods=['POST'])
+# NOTE: See URL Route Registrations for more details on how multiple routing
+# specifications are wrapped here.
+# [docs] http://flask.pocoo.org/docs/1.0/api/#url-route-registrations
+def submit(namespace, doctype, docversion=None, **kwargs):
     resp = ('OK', 200)
+
     try:
         docversion = docversion or SCHEMA_VERSIONS[namespace][doctype]
         key = "{}.{}".format(doctype, docversion)

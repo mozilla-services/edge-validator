@@ -20,7 +20,7 @@ $ pip install --user --upgrade pip
 # install pipenv for managing the application environment
 $ pip install --user pipenv
 
-# bootstrap for test and serve
+# bootstrap for test/report/serve
 $ make sync
 ```
 
@@ -29,7 +29,8 @@ $ make sync
 
 ```bash
 $ docker --version          # ensure that docker is installed
-$ make serve                # start the service
+$ make build                # build the container
+$ make serve                # start the service on localhost:8000
 ```
 
 #### serving via local host

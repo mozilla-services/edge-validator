@@ -9,8 +9,11 @@ report:
 	INCLUDE_DATA=true bash sync.sh
 	pipenv run python report_integration.py
 
-build: sync
+build:
 	docker build -t edge-validator:latest .
 
-run:
-	docker run -p 8000:8000 edge-validator:latest
+serve:
+	docker run -p 8000:8000 -it edge-validator:latest
+
+shell:
+	docker run -p 8000:8000 -it edge-validator:latest /bin/bash

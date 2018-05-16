@@ -23,14 +23,14 @@ data_path="${OUTPUT_PATH}/data"
 schema_path="${OUTPUT_PATH}/schemas"
 
 # Create the resource directory if not exists.
-if [[ ! -d ${data_path} ]]; then
+if [[ ! -d "${data_path}" ]]; then
     echo "Creating the resource path: ${data_path}"
-    mkdir -p ${data_path}
+    mkdir -p "${data_path}"
 fi
 
-if [[ ! -d ${schema_path} ]]; then
+if [[ ! -d "${schema_path}" ]]; then
     echo "Creating the resource path: ${schema_path}"
-    mkdir -p ${schema_path}
+    mkdir -p "${schema_path}"
 fi
 
 function sync_data {
@@ -39,10 +39,10 @@ function sync_data {
     # List all available json samples.
     # ex: amiyaguchi/sanitized-landfill-sample/v1/system_id=telemetry/doc_type=anonymous/*.json
     paths=$(
-        aws s3 ls --recursive $src_data_path |  # recursively list all files 
-        grep .json |                            # find leaf nodes containing sampled documents
-        tr -s ' ' | cut -d ' ' -f4              # get the prefix for the json document
-                                                # aws ls returns multiple spaces, so pass it through tr
+        aws s3 ls --recursive "$src_data_path" |  # recursively list all files
+        grep .json |                              # find leaf nodes containing sampled documents
+        tr -s ' ' | cut -d ' ' -f4                # get the prefix for the json document
+                                                  # aws ls returns multiple spaces, so pass it through tr
     )
 
     echo "Updating local sampled data from ${src_data_path}"
@@ -52,29 +52,29 @@ function sync_data {
     for path in ${paths}; do
         # https://stackoverflow.com/a/4749368
         if [[ -e ${cache} ]]; then
-            if grep -Fxq ${path} ${cache}; then
+            if grep -Fxq "${path}" "${cache}"; then
                 echo "Skipping cached ${path}"
                 continue
             fi
         fi
 
-        system=`echo ${path} | cut -d'/' -f4 | cut -d'=' -f2`
-        doc_type=`echo ${path} | cut -d'/' -f5 | cut -d'=' -f2`
+        system=$(echo "${path}" | cut -d'/' -f4 | cut -d'=' -f2)
+        doc_type=$(echo "${path}" | cut -d'/' -f5 | cut -d'=' -f2)
         
         system_dir="${data_path}/${system}"
         filename="${doc_type}.batch.json"
         
         # make the system directory e.g. telemetry if not exists
-        if [[ ! -d ${system_dir} ]]; then
-           mkdir -p ${system_dir}
+        if [[ ! -d "${system_dir}" ]]; then
+           mkdir -p "${system_dir}"
         fi
 
         # copy and overwrite any existing data
-        aws s3 cp s3://${SRC_DATA_BUCKET}/${path} ${system_dir}/${filename}
+        aws s3 cp "s3://${SRC_DATA_BUCKET}/${path}" "${system_dir}/${filename}"
     done
 
     # cache metadata
-    echo ${paths} | tr ' ' '\n' > ${cache}
+    echo "${paths}" | tr ' ' '\n' > "${cache}"
 }
 
 function sync_schema {
@@ -89,20 +89,19 @@ function sync_schema {
 
     # print out branch information if applicable
     if [[ -e "${MPS_ROOT}/.git" ]]; then
-        pushd .; cd ${MPS_ROOT}
+        pushd .; cd "${MPS_ROOT}"
         git --no-pager log -n1
         popd
     fi
 
-    cp --recursive --verbose ${src_schema_path}/* ${schema_path}/
+    cp --recursive --verbose "${src_schema_path}"/* "${schema_path}"/
 }
 
 function copy_test_schema {
     echo "Copying testing schemas"
-    cp --recursive --verbose tests/resources/schemas/* ${schema_path}/
+    cp --recursive --verbose "tests/resources/schemas"/* "${schema_path}"/
 }
 
 sync_schema
 if [[ "${INCLUDE_DATA}" == true ]]; then sync_data; fi
 if [[ "${INCLUDE_TESTS}" == true ]]; then copy_test_schema; fi
-

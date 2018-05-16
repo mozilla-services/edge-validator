@@ -6,8 +6,11 @@ import os
 
 import rapidjson
 from flask import Flask, request
+from dockerflow.flask import Dockerflow
+
 
 app = Flask(__name__)
+dockerflow = Dockerflow(app)
 
 
 def load_namespace(base, namespace):
@@ -35,47 +38,68 @@ def load_data():
     See https://stackoverflow.com/a/42440784
     """
 
-    # https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/common-ping.html
-    common_schema = rapidjson.Validator(rapidjson.dumps({
-            "properties": {
-                "type": {"type": "string"},
-                "id": {"type": "string"},
-                "creationDate": {"type": "string"},
-                "version": {"type": "integer"},
-                },
-            "required": ["type", "id", "creationDate", "version"],
-            }))
-
     # Schemas have a naming convention. See `sync.sh` for an example of the ingestion
     # submission format.
     schemas = {}
 
-
     # List the separate data ingestion namespaces
     base = "resources/schemas"
-    for system_id in os.listdir("resources/schemas"):
-        schemas[system_id] = load_namespace(base, system_id)
+    for namespace in os.listdir("resources/schemas"):
+        schemas[namespace] = load_namespace(base, namespace)
 
-    return common_schema, schemas
+    versions = {}
+    for namespace in schemas.keys():
+        ns_version = {}
+        for key in schemas[namespace].keys():
+            doctype, docversion = key.split('.')
+            # take the most recent version determined by string comparison
+            ns_version[doctype] = max(versions.get(doctype, '0'), docversion)
+        versions[namespace] = ns_version
+
+    return schemas, versions
 
 
-COMMON_SCHEMA, NAMESPACE_SCHEMAS = load_data()
+NAMESPACE_SCHEMAS, SCHEMA_VERSIONS = load_data()
 
 
-@app.route('/<namespace>', methods=['POST'])
-def index(namespace):
-    # equivalent to `json.loads(request.data)`
-    content = request.get_json()
+def build_route(endpoint, params):
+    return '/'.join([endpoint] + params)
 
+
+telemetry_ingestion = [
+    '<namespace>',          # generally `telemetry` in this context
+    '<uuid:docid>',         # used for document de-duplication
+    '<doctype>',
+    '<appName>',
+    '<appVersion>',
+    '<appUpdateChannel>',
+    '<appBuildId>',
+]
+
+generic_ingestion = [
+    '<namespace>',
+    '<doctype>',
+    '<int:docversion>',
+    '<uuid:docid>',
+]
+
+
+@app.route(build_route('/submit', telemetry_ingestion), methods=['POST'])
+# the validation API is tolerant of missing docversion and docid
+@app.route(build_route('/submit', generic_ingestion[:-2]),  methods=['POST'])
+@app.route(build_route('/submit', generic_ingestion[:-1]),  methods=['POST'])
+@app.route(build_route('/submit', generic_ingestion),  methods=['POST'])
+# NOTE: See URL Route Registrations for more details on how multiple routing
+# specifications are wrapped here.
+# [docs] http://flask.pocoo.org/docs/1.0/api/#url-route-registrations
+def submit(namespace, doctype, docversion=None, **kwargs):
     resp = ('OK', 200)
-    try:
-        # validate against the common ping format
-        COMMON_SCHEMA(request.data)
 
-        key = "{}.{}".format(content["type"], content["version"])
+    try:
+        docversion = docversion or SCHEMA_VERSIONS[namespace][doctype]
+        key = "{}.{}".format(doctype, docversion)
         NAMESPACE_SCHEMAS[namespace][key](request.data)
     except (ValueError, KeyError) as e:
         resp = ("BAD: {}".format(e), 400)
     return resp
-
 

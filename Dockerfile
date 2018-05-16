@@ -3,11 +3,12 @@ MAINTAINER Anthony Miyaguchi <amiyaguchi@mozilla.com>
 
 # bootstrap
 ENV PYTHONUNBUFFERED=1 \
-    PORT=8000 \
-    WEB_CONCURRENCY=1
+    PORT=8000
 
 EXPOSE $PORT
 
+RUN apt-get update && \
+    apt-get --yes install make git
 RUN pip install --upgrade pip
 RUN pip install pipenv
 
@@ -19,5 +20,6 @@ RUN chown -R app:app /app
 COPY . /app
 
 # start userland
-RUN pipenv sync
-CMD pipenv run gunicorn -b 0.0.0.0:$PORT app:app
+USER app
+RUN make sync
+CMD pipenv run flask run --host 0.0.0.0 --port $PORT

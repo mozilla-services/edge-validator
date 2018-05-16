@@ -22,11 +22,21 @@ validation.
 $ OK_DATA="$(echo '{"payload": {"foo": true, "bar": 1, "baz": "hello world"}}')"
 $ curl -X POST -H "Content-Type: application/json" -d "${OK_DATA}" localhost:8000/submit/testing/test/1
 > OK
+```
 
+The endpoint will return `200 OK` on a successful POST. If the URI is malformed, the validator may return with a
+`404 NOT FOUND`. The response will be `400 BAD` if the posted documented does not pass validation. The status will also
+include the exception that caused the error.
+
+```bash
 $ BAD_DATA="$(echo '{"payload": {"foo": null, "bar": "3", "baz": 55}}')"
 $ curl -X POST -H "Content-Type: application/json" -d "${BAD_DATA}" localhost:8000/submit/testing/test/1
 > BAD: ('type', '#/properties/payload/properties/foo', '#/payload/foo')
 ```
+
+In this example, `payload.foo` should be a boolean and `payload.baz` should be a string. Currently, only the first
+validation exception will be propagated to the user.
+
 
 The exposed port can be changed through the `PORT` environment variable. It is possible to mount a set of local
 json-schemas by mounting a folder structure mirroring `mozilla-services/mozilla-pipeline-schemas` to the container's

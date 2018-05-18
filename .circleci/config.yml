@@ -40,6 +40,7 @@ jobs:
           key: v1-{{ .Branch }}-{{epoch}}
           paths:
             - /cache/docker.tar
+            - /app
 
   test:
     docker:
@@ -54,12 +55,7 @@ jobs:
 
       - run:
           name: Test Code
-          command: |
-            container_id="$(docker run -tid app:build)"
-            docker exec "${container_id}" pipenv run \
-                python -m pytest --junitxml=test-reports/junit.xml tests/
-            docker cp "${container_id}":/app/test-reports test-reports
-            docker stop "${container_id}"
+          command: IMAGE=app:build /app/test_docker.sh
 
       - store_test_results:
           path: test-reports

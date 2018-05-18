@@ -53,7 +53,7 @@ def load_data():
         for key in schemas[namespace].keys():
             doctype, docversion = key.split('.')
             # take the most recent version determined by string comparison
-            ns_version[doctype] = max(versions.get(doctype, '0'), docversion)
+            ns_version[doctype] = max(ns_version.get(doctype, '0'), docversion)
         versions[namespace] = ns_version
 
     return schemas, versions

@@ -8,11 +8,10 @@ See [bug 1452166](https://bugzilla.mozilla.org/show_bug.cgi?id=1452166) for moti
 
 ## Quickstart
 
-**Warning: prebuilt docker images are not available yet. Please refer to the installation guide further below.**
-
-Start the docker container to start the local service at `localhost:8000`. This will fetch the image from dockerhub.
+Start the docker container to start the local service at `localhost:8000`. The following command will fetch the latest
+image from dockerhub.
 ```bash
-docker run -it edge-validator:latest
+docker run -it mozilla/edge-validator:latest
 ```
 
 Simply POST to the endpoint to check if a document is valid. The `testing` namespace has an example schema for

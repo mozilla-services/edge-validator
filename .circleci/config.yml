@@ -56,7 +56,9 @@ jobs:
       - run:
           name: Test Code
           command: IMAGE=app:build /app/test_docker.sh
-
+      - store_artifacts:
+          path: test-reports
+          destination: test-results
       - store_test_results:
           path: test-reports
 

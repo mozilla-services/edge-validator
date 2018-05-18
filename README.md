@@ -2,7 +2,7 @@
 
 A service-endpoint for validating pings against `mozilla-pipeline-schemas`.
 
-[![CircleCI](https://circleci.com/gh/acmiyaguchi/edge-validator.svg?style=svg)](https://circleci.com/gh/acmiyaguchi/edge-validator)
+[![CircleCI](https://circleci.com/gh/mozilla-services/edge-validator.svg?style=svg)](https://circleci.com/gh/mozilla-services/edge-validator)
 
 See [bug 1452166](https://bugzilla.mozilla.org/show_bug.cgi?id=1452166) for motivating background.
 
@@ -153,6 +153,12 @@ copy the test resources into the application resource folder.
 ```bash
 $ make sync
 $ make test
+```
+
+You may also run the tests in docker in the same way as CI. A `junit.xml` file is generated in a `test-reports` folder.
+
+```bash
+IMAGE=edge-validator:latest ./test_docker.sh
 ```
 
 An integration report gives a performance report based on sampled data. Make sure that

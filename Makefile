@@ -16,4 +16,4 @@ serve:
 	docker run -p 8000:8000 -it edge-validator:latest
 
 shell:
-	docker run -p 8000:8000 -it edge-validator:latest /bin/bash
+	docker run -p 8000:8000 -it edge-validator:latest pipenv shell

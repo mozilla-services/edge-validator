@@ -158,7 +158,7 @@ $ pipenv sync               # update the environment
 $ flask run --port 8000     # run the application
 ```
 
-### Running tests
+### Running Tests
 
 Unit tests do not require any dependencies and can be run out of the box.
 The sync command will copy the test resources into the application resource folder.
@@ -174,8 +174,17 @@ A `junit.xml` file is generated in a `test-reports` folder.
 IMAGE=edge-validator:latest ./test_docker.sh
 ```
 
+# Running Integration Tests
+
 An integration report gives a performance report based on sampled data.
-Make sure that aws is set up correctly.
+
+Ensure that the AWS cli is correctly configured.
+
+```bash
+$ aws s3 ls s3://telemetry-test-bucket/
+```
+
+Then run the report.
 
 ```bash
 # Run using the local app context
@@ -183,4 +192,13 @@ $ make report
 
 # Run using the docker host
 $ EXTERNAL=1 PORT=8000 make report
+```
+
+The report can also be run in Docker when given the correct permissions.
+```bash
+$ docker run \
+    -e AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY \
+    -it edge-validator:latest \
+    make report
 ```

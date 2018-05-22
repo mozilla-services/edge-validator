@@ -2,6 +2,7 @@ FROM python:3.6-slim
 MAINTAINER Anthony Miyaguchi <amiyaguchi@mozilla.com>
 
 ENV PYTHONUNBUFFERED=1 \
+    PIPENV_VENV_IN_PROJECT=1 \
     # AWS_ACCESS_KEY_ID= \
     # AWS_SECRET_ACCESS_KEY= \
     SHELL=/bin/bash \
@@ -21,12 +22,10 @@ RUN groupadd --gid 10001 app && \
     useradd --gid app --uid 10001 --home-dir /app app
 RUN chown -R app:app /app
 
-# Install dependencies from the lock file (equivalent to requirements.txt)
-COPY Pipfile.lock /app/
-RUN pipenv install --dev --skip-lock
-
 # Start the userland environment
 COPY . /app
 USER app
+ENV PATH="/app/.venv/bin:$PATH"
+
 RUN make sync
 CMD pipenv run flask run --host 0.0.0.0 --port $PORT

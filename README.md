@@ -202,3 +202,8 @@ $ docker run \
     -it edge-validator:latest \
     make report
 ```
+
+You may also be interested in a machine consumable integration report.
+```bash
+$ pipenv run python report_integration.py --file test-reports/integration.json
+```

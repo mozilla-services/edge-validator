@@ -1,11 +1,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import argparse
 import os
 import time
 import requests
+from subprocess import run
 
+import click
 import rapidjson as json
 
 
@@ -29,7 +30,8 @@ REPORT_SCHEMA = {
                             "type": "number",
                             "minumum": 0
                         }
-                    }
+                    },
+                    "required": ["error_rate", "total", "time"]
                 }
             }
         }
@@ -107,11 +109,12 @@ def print_results(result):
         )
 
 
-def report_telemetry(path, output=None):
+def report(data_path, report_path):
     test_results = {
         "results": {}
     }
-    for root, _, files in os.walk(path):
+
+    for root, _, files in os.walk(data_path):
         for name in files:
             filename = os.path.join(root, name)
             messages = []
@@ -124,7 +127,7 @@ def report_telemetry(path, output=None):
             print_results(result)
             test_results["results"] = {**result, **test_results["results"]}
 
-    if output:
+    if report_path:
         try:
             validate = json.Validator(json.dumps(REPORT_SCHEMA))
             validate(json.dumps(test_results))
@@ -132,16 +135,45 @@ def report_telemetry(path, output=None):
             print(error.args)
             exit(-1)
 
-        os.makedirs(os.path.dirname(output), exist_ok=True)
+        os.makedirs(os.path.dirname(report_path), exist_ok=True)
 
-        with open(output, 'w') as f:
+        print("Writing to {}".format(report_path))
+        with open(report_path, 'w') as f:
             json.dump(test_results, f)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run an integration report.')
-    parser.add_argument('-f', '--file', type=str, default=None,
-                        help='Path to store results as a file')
+@click.group()
+def cli():
+    pass
 
-    args = parser.parse_args()
-    report_telemetry('resources/data/', output=args.file)
+
+@cli.command()
+@click.option('--data-path', type=click.Path(exists=True),
+              default='resources/data')
+@click.option('--report-path', type=click.Path(dir_okay=False))
+def report_command(data_path, report_path):
+    """Run an integration report against currently loaded schemas."""
+    report(data_path, report_path)
+
+
+def checkout_mps_tag(tag):
+    run(["git", "submodule", "foreach", "git", "checkout", tag])
+
+
+@cli.command()
+@click.argument('tag-A')
+@click.argument('tag-B')
+@click.option('--data-path', type=click.Path(), default='resources/data')
+@click.option('--report-path', type=click.Path(file_okay=False), required=True)
+def compare(tag_a, tag_b, data_path, report_path):
+    checkout_mps_tag(tag_a)
+    report(data_path, os.path.join(report_path, "{}.report.json".format(tag_a)))
+
+    checkout_mps_tag(tag_b)
+    report(data_path, os.path.join(report_path, "{}.report.json".format(tag_b)))
+
+    checkout_mps_tag("master")
+
+
+if __name__ == '__main__':
+    cli()

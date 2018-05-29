@@ -56,16 +56,29 @@ else:
     client = app.test_client()
 
 
+def get_text(resp):
+    if os.environ.get("EXTERNAL"):
+        return resp.text
+    else:
+        return resp.data.decode('utf-8')
+
+
 def validate_sample(namespace, name, messages):
     start = time.time()
     fail = 0
     doctype = name.split('.batch.json')[0]
+    errors = {}
     for msg in messages:
         route = '/submit/{}/{}'.format(namespace, doctype)
         rv = client.post(route,
                          data=msg.encode('utf-8'),
                          content_type='application/json')
-        fail += int(rv.status_code != 200)
+        is_failure = rv.status_code != 200
+        if is_failure:
+            fail += 1
+            text = get_text(rv)
+            errors[text] = errors.get(text, 0) + 1
+
     end = time.time()
     total = len(messages)
     err_rate = fail/float(total)*100
@@ -73,7 +86,8 @@ def validate_sample(namespace, name, messages):
         "{}.{}".format(namespace, doctype): {
             'error_rate': round(err_rate, 2),
             'total': total,
-            'time': round(end-start, 2)
+            'time': round(end-start, 2),
+            'errors': errors or None
         }
     }
     return result

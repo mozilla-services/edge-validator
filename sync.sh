@@ -94,12 +94,12 @@ function sync_schema {
         popd
     fi
 
-    cp --recursive --verbose "${src_schema_path}"/* "${schema_path}"/
+    rsync -avh "${src_schema_path}"/ "${schema_path}"/ --delete
 }
 
 function copy_test_schema {
     echo "Copying testing schemas"
-    cp --recursive --verbose "tests/resources/schemas"/* "${schema_path}"/
+    rsync -avh "tests/resources/schemas"/ "${schema_path}"/
 }
 
 sync_schema

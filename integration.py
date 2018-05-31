@@ -4,14 +4,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import difflib
+import importlib
 import os
 import time
-import requests
 from subprocess import run
 
 import click
+import pyjq
 import rapidjson as json
+import requests
 
+import app
 
 REPORT_SCHEMA = {
     "type": "object",
@@ -42,6 +46,7 @@ REPORT_SCHEMA = {
     "required": ["results"]
 }
 
+
 class Reporter(object):
 
     def __init__(self, is_external=None):
@@ -62,9 +67,9 @@ class Reporter(object):
 
             client = Client()
         else:
-            from app import app
-            app.config['TESTING'] = True
-            client = app.test_client()
+            importlib.reload(app)
+            app.app.config['TESTING'] = True
+            client = app.app.test_client()
         return client
 
     def get_text(self, resp):
@@ -163,8 +168,28 @@ class Environment(object):
         run(["bash", "sync.sh"])
 
 
-def diff(json_A, json_B):
-    raise NotImplementedError
+def diff(json_a_path, json_b_path, output_path):
+    # extract a subset
+    def _transform(path):
+        transform = (
+            '.results | '
+            'to_entries | '
+            'map({doc_type: .key, error_rate: .value.error_rate})'
+        )
+        with open(path, 'r') as f:
+            data = pyjq.first(transform, json.load(f))
+        return json.dumps(data, indent=4).splitlines(keepends=True)
+
+    json_a = _transform(json_a_path)
+    json_b = _transform(json_b_path)
+
+    result = difflib.unified_diff(json_a, json_b)
+    output = ''.join(result)
+    print(output)
+
+    print("Writing diff to {}".format(output_path))
+    with open(output_path, 'w') as f:
+        f.write(output)
 
 
 @click.group()
@@ -186,24 +211,32 @@ def report(data_path, report_path):
 @click.argument('rev-B')
 @click.option('--data-path', type=click.Path(), default='resources/data')
 @click.option('--report-path', type=click.Path(file_okay=False), required=True)
-def compare(rev_a, rev_b, data_path, report_path):
+@click.option('--cache/--no-cache', default=True)
+def compare(rev_a, rev_b, data_path, report_path, cache):
     """Compare the results of two revisions of `mozilla-pipeline-schemas`."""
 
     if os.environ.get("EXTERNAL"):
         err_msg = "EXTERNAL configuration is currently not supported"
         raise NotImplementedError(err_msg)
 
-    rev_a_path = os.path.join(report_path, "{}.report.json".format(rev_a))
-    Environment.checkout(rev_a)
-    Environment.sync()
-    Reporter().run(data_path, rev_a_path)
+    def _run_report(rev):
+        output_path = os.path.join(report_path, "{}.report.json".format(rev))
 
-    rev_b_path = os.path.join(report_path, "{}.report.json".format(rev_b))
-    Environment.checkout(rev_b)
-    Environment.sync()
-    Reporter().run(data_path, rev_b_path)
+        # exit early if the report already been run and we are using the cache
+        if os.path.exists(output_path) and cache:
+            return output_path
 
-    # TODO: diff
+        Environment.checkout(rev)
+        Environment.sync()
+        Reporter().run(data_path, output_path)
+
+        return output_path
+
+    rev_a_path = _run_report(rev_a)
+    rev_b_path = _run_report(rev_b)
+
+    diff_path = os.path.join(report_path, "{}-{}.diff".format(rev_a, rev_b))
+    diff(rev_a_path, rev_b_path, diff_path)
 
     # TODO: restore the proper state
     Environment.checkout("dev")

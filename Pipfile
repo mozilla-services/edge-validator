@@ -9,7 +9,6 @@ python-rapidjson = "*"
 dockerflow = "*"
 blinker = "*"
 click = "*"
-pyjq = "*"
 
 [dev-packages]
 pytest = "*"

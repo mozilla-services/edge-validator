@@ -11,7 +11,6 @@ import time
 from subprocess import run
 
 import click
-import pyjq
 import rapidjson as json
 import requests
 
@@ -171,14 +170,22 @@ class Environment(object):
 def diff(json_a_path, json_b_path, output_path):
     # extract a subset
     def _transform(path):
-        transform = (
-            '.results | '
-            'to_entries | '
-            'map({doc_type: .key, error_rate: .value.error_rate})'
-        )
+        """The following jq expression can be used for document comparison
+
+            jq \
+                '.results | to_entries |
+                map({doc_type: .key, error_rate: .value.error_rate})' \
+            test-reports/dev.report.json
+        """
         with open(path, 'r') as f:
-            data = pyjq.first(transform, json.load(f))
-        return json.dumps(data, indent=4).splitlines(keepends=True)
+            data = json.loads(f.read())
+        subset = {}
+        # iterate over the measurements and collect comparable stats
+        for doc_type, measures in data['results'].items():
+            subset[doc_type] = {
+                'error_rate': measures['error_rate']
+            }
+        return json.dumps(subset, indent=4).splitlines(keepends=True)
 
     json_a = _transform(json_a_path)
     json_b = _transform(json_b_path)

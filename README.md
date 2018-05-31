@@ -205,5 +205,5 @@ $ docker run \
 
 You may also be interested in a machine consumable integration report.
 ```bash
-$ pipenv run python report_integration.py --file test-reports/integration.json
+$ pipenv run ./integration.py report --report-path test-reports/integration.json
 ```

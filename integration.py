@@ -47,7 +47,6 @@ REPORT_SCHEMA = {
 
 
 class Reporter(object):
-
     def __init__(self, is_external=None):
         self.is_external = is_external or os.environ.get("EXTERNAL")
         self.client = self._get_client()
@@ -81,10 +80,14 @@ class Reporter(object):
 
     def validate_sample(self, namespace, name, messages):
         start = time.time()
-        doctype = name.split('.batch.json')[0]
+        submission, doc_type, doc_version = (
+            name.split('.batch.json')[0].split('.')
+        )
         errors = {}
         for msg in messages:
-            route = '/submit/{}/{}'.format(namespace, doctype)
+            route = '/submit/{}/{}'.format(namespace, doc_type)
+            if int(doc_version) > 0:
+                route = '{}/{}'.format(route, doc_version)
             resp = self.client.post(route,
                                     data=msg.encode('utf-8'),
                                     content_type='application/json')
@@ -96,13 +99,13 @@ class Reporter(object):
         end = time.time()
         error_count = sum(errors.values())
         total = len(messages)
-        error_rate = error_count/float(total)*100
+        error_rate = error_count / float(total) * 100
         result = {
-            "{}.{}".format(namespace, doctype): {
+            "{}.{}.{}".format(namespace, doc_type, doc_version): {
                 'error_count': error_count,
                 'total': total,
                 'error_rate': round(error_rate, 2),
-                'time': round(end-start, 2),
+                'time': round(end - start, 2),
                 'errors': errors or None
             }
         }

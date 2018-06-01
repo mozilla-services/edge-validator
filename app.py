@@ -99,7 +99,9 @@ def submit(namespace, doctype, docversion=None, **kwargs):
         docversion = docversion or SCHEMA_VERSIONS[namespace][doctype]
         key = "{}.{}".format(doctype, docversion)
         NAMESPACE_SCHEMAS[namespace][key](request.data)
-    except (ValueError, KeyError) as e:
-        resp = ("BAD: {}".format(e), 400)
+    except ValueError as e:
+        resp = ("Validation Error: {}".format(e), 400)
+    except KeyError as e:
+        resp = ("Missing Schema: {}".format(e), 400)
     return resp
 

@@ -8,10 +8,12 @@ Flask = "*"
 python-rapidjson = "*"
 dockerflow = "*"
 blinker = "*"
+click = "*"
 
 [dev-packages]
 pytest = "*"
 requests = "*"
+awscli = "*"
 
 [requires]
 python_version = "3.6"

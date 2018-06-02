@@ -112,17 +112,17 @@ class Reporter(object):
         return result
 
     @staticmethod
-    def print(result):
+    def display(result):
         for doc_type, metric in result.items():
             print(
                 "ErrorRate: {:.2f}%\t"
                 "Total: {}\t"
                 "Time: {:.1f} seconds\t"
                 "DocType: {}"
-                .format(metric['error_rate'],
-                        metric['total'],
-                        metric['time'],
-                        doc_type)
+                    .format(metric['error_rate'],
+                            metric['total'],
+                            metric['time'],
+                            doc_type)
             )
 
     @staticmethod
@@ -153,7 +153,7 @@ class Reporter(object):
                         messages.append(content)
                 namespace = os.path.basename(root)
                 result = self.validate_sample(namespace, name, messages)
-                self.print(result)
+                self.display(result)
                 test_results["results"] = {**result, **test_results["results"]}
 
         if report_path:

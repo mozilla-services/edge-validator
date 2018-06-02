@@ -8,7 +8,7 @@ import difflib
 import importlib
 import os
 import time
-from subprocess import run
+from subprocess import run, PIPE
 
 import click
 import rapidjson as json
@@ -163,7 +163,15 @@ class Reporter(object):
 class Environment(object):
     @staticmethod
     def checkout(rev):
-        run(["git", "submodule", "foreach", "git", "checkout", rev])
+        run(["git", "submodule", "foreach",
+             "git", "checkout", rev])
+
+    @staticmethod
+    def current_revision():
+        res = run(["git", "submodule", "foreach",
+                   "git", "rev-parse", "HEAD"], stdout=PIPE)
+        head = res.stdout.split()[-1]
+        return head.decode('utf-8')
 
     @staticmethod
     def sync():
@@ -242,14 +250,16 @@ def compare(rev_a, rev_b, data_path, report_path, cache):
 
         return output_path
 
+    # keep track of the current branch
+    head = Environment.current_revision()
+
     rev_a_path = _run_report(rev_a)
     rev_b_path = _run_report(rev_b)
 
     diff_path = os.path.join(report_path, "{}-{}.diff".format(rev_a, rev_b))
     diff(rev_a_path, rev_b_path, diff_path)
 
-    # TODO: restore the proper state
-    Environment.checkout("dev")
+    Environment.checkout(head)
 
 
 if __name__ == '__main__':

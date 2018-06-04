@@ -211,26 +211,71 @@ def diff(json_a_path, json_b_path, output_path):
 
 
 @click.group()
-def cli():
+def integrate():
+    """Tools for running a continuous schema integration loop."""
     pass
 
 
-@cli.command()
+@integrate.command('sync', short_help="synchronize remote resources")
+@click.option('--output-path', type=click.Path(file_okay=False),
+              default='resources/',
+              help="path to the application resource folder.")
+@click.option('--include-data', type=bool,
+              default=True,
+              help="fetch sampled data from a remote, performed by default")
+@click.option('--data-bucket', type=str,
+              default='net-mozaws-prod-us-west-2-pipeline-analysis',
+              help="location of the s3 bucket")
+@click.option('--data-prefix', type=str,
+              default='amiyaguchi/sanitized-landfill-sample/v2',
+              help="location of the sanitized-landfill-sample dataset")
+@click.option('--include-tests', type=bool,
+              default=True,
+              help="add schemas from the testing directory")
+@click.option('--schema-root', type=click.Path(exists=True),
+              default='mozilla-pipeline-schemas',
+              help="path to a copy of the mozilla-pipeline-schemas repository")
+def sync_cmd(**kwargs):
+    """Synchronize local resources with remote data sources.
+
+    The sync command updates the application resource folder with data from
+    external sources. These resources are used by both the edge-validator and
+    the integration script.
+
+    Updates to mozilla-pipeline-schemas should be synchronized for application
+    visibility. Likewise, the integration report is tied closely with the
+    sanitized landfill sample data set, which is updated on a daily basis.
+
+    New external resources should be added to the synchronization process with
+    a clear focus on reproducibility.
+
+    """
+    Environment.sync()
+
+
+@integrate.command('report', short_help="collect metrics about errors in a data-set")
 @click.option('--data-path', type=click.Path(exists=True),
-              default='resources/data')
-@click.option('--report-path', type=click.Path(dir_okay=False))
-def report(data_path, report_path):
+              default='resources/data',
+              help="path to the the application data resources")
+@click.option('--report-path', type=click.Path(dir_okay=False),
+              help="path to store reports")
+def report_cmd(data_path, report_path):
     """Run an integration report against currently loaded schemas."""
     Reporter().run(data_path, report_path)
 
 
-@cli.command()
+@integrate.command('compare', short_help="compare schema errors across two revisions")
 @click.argument('rev-A')
 @click.argument('rev-B')
-@click.option('--data-path', type=click.Path(), default='resources/data')
-@click.option('--report-path', type=click.Path(file_okay=False), required=True)
-@click.option('--cache/--no-cache', default=True)
-def compare(rev_a, rev_b, data_path, report_path, cache):
+@click.option('--data-path', type=click.Path(),
+              default='resources/data',
+              help="path to the application data resources")
+@click.option('--report-path', type=click.Path(file_okay=False),
+              required=True,
+              help="path to store reports")
+@click.option('--cache/--no-cache', default=True,
+              help="utilize cached reports to speed up comparisons")
+def compare_cmd(rev_a, rev_b, data_path, report_path, cache):
     """Compare the results of two revisions of `mozilla-pipeline-schemas`."""
 
     if os.environ.get("EXTERNAL"):
@@ -263,4 +308,4 @@ def compare(rev_a, rev_b, data_path, report_path, cache):
 
 
 if __name__ == '__main__':
-    cli()
+    integrate()

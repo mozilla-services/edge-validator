@@ -174,8 +174,8 @@ class Environment(object):
         return head.decode('utf-8')
 
     @staticmethod
-    def sync():
-        run(["bash", "sync.sh"])
+    def sync(env=os.environ):
+        run(["bash", "sync.sh"], env=env)
 
 
 def diff(json_a_path, json_b_path, output_path):
@@ -220,7 +220,7 @@ def integrate():
 @click.option('--output-path', type=click.Path(file_okay=False),
               default='resources/',
               help="path to the application resource folder.")
-@click.option('--include-data', type=bool,
+@click.option('--include-data/--ignore-data',
               default=True,
               help="fetch sampled data from a remote, performed by default")
 @click.option('--data-bucket', type=str,
@@ -229,7 +229,7 @@ def integrate():
 @click.option('--data-prefix', type=str,
               default='amiyaguchi/sanitized-landfill-sample/v2',
               help="location of the sanitized-landfill-sample dataset")
-@click.option('--include-tests', type=bool,
+@click.option('--include-tests/--ignore-tests',
               default=True,
               help="add schemas from the testing directory")
 @click.option('--schema-root', type=click.Path(exists=True),
@@ -250,7 +250,17 @@ def sync_cmd(**kwargs):
     a clear focus on reproducibility.
 
     """
-    Environment.sync()
+    # Backwards compatibility layer for `sync.sh`
+    options = {
+        'SRC_DATA_BUCKET': kwargs['data_bucket'],
+        'SRC_DATA_PREFIX': kwargs['data_prefix'],
+        'MPS_ROOT': kwargs['schema_root'],
+        'OUTPUT_PATH': kwargs['output_path'],
+        'INCLUDE_DATA': "true" if kwargs['include_data'] else "false",
+        'INCLUDE_TESTS': "true" if kwargs['include_tests'] else "false",
+    }
+    env = {**os.environ, **options}
+    Environment.sync(env)
 
 
 @integrate.command('report', short_help="collect metrics about errors in a data-set")

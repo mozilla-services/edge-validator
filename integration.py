@@ -110,15 +110,21 @@ class Reporter(object):
     @staticmethod
     def display(result):
         for doc_type, metric in result.items():
+            errors = metric['errors']
+            is_missing = (
+                errors and
+                len(errors) == 1 and
+                "Missing Schema" in list(errors.keys())[0]
+            )
             print(
-                "ErrorRate: {:.2f}%\t"
-                "Total: {}\t"
-                "Time: {:.1f} seconds\t"
-                "DocType: {}"
-                    .format(metric['error_rate'],
+                "DocType: {:<50}"
+                "ErrorRate: {:>5}\t"
+                "Total: {:>4}\t"
+                "Time: {:>.1f} seconds\t"
+                    .format(doc_type,
+                            "" if is_missing else metric['error_rate'],
                             metric['total'],
-                            metric['time'],
-                            doc_type)
+                            metric['time'])
             )
 
     @staticmethod

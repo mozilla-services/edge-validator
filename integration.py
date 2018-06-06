@@ -14,8 +14,6 @@ import click
 import rapidjson as json
 import requests
 
-import app
-
 REPORT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -65,6 +63,7 @@ class Reporter(object):
 
             client = Client()
         else:
+            import app
             importlib.reload(app)
             app.app.config['TESTING'] = True
             client = app.app.test_client()
@@ -78,11 +77,8 @@ class Reporter(object):
         else:
             return resp.data.decode('utf-8')
 
-    def validate_sample(self, namespace, name, messages):
+    def validate_sample(self, namespace, doc_type, doc_version, messages):
         start = time.time()
-        submission, doc_type, doc_version = (
-            name.split('.batch.json')[0].split('.')
-        )
         errors = {}
         for msg in messages:
             route = '/submit/{}/{}'.format(namespace, doc_type)
@@ -143,16 +139,23 @@ class Reporter(object):
     def run(self, data_path, report_path=None):
         test_results = {"results": dict()}
 
+        # Use the most recent data
+        submission_date = max(os.listdir(data_path))
+        data_path = os.path.join(data_path, submission_date)
+
         for root, _, files in os.walk(data_path):
             for name in files:
+                namespace = os.path.basename(root)
+                doc_type, doc_version = name.split('.batch.json')[0].split('.')
+
                 filename = os.path.join(root, name)
                 messages = []
                 with open(filename, 'r') as f:
                     for line in f:
                         content = json.loads(line).get('content', {})
                         messages.append(content)
-                namespace = os.path.basename(root)
-                result = self.validate_sample(namespace, name, messages)
+
+                result = self.validate_sample(namespace, doc_type, doc_version, messages)
                 self.display(result)
                 test_results["results"] = {**result, **test_results["results"]}
 
@@ -248,7 +251,6 @@ def sync_cmd(**kwargs):
 
     New external resources should be added to the synchronization process with
     a clear focus on reproducibility.
-
     """
     # Backwards compatibility layer for `sync.sh`
     options = {

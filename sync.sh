@@ -13,7 +13,7 @@ set -euo pipefail
 
 # The environment must set up with the correct AWS credentials
 SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:-"net-mozaws-prod-us-west-2-pipeline-analysis"}
-SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v2"}
+SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v3"}
 MPS_ROOT=${MPS_ROOT:-"./mozilla-pipeline-schemas"}
 OUTPUT_PATH=${OUTPUT_PATH:-"resources"}
 INCLUDE_DATA=${INCLUDE_DATA:-"true"}
@@ -35,7 +35,15 @@ fi
 
 function sync_data {
     src_data_path="s3://${SRC_DATA_BUCKET}/${SRC_DATA_PREFIX}"
-    
+
+    # Use only the most recent data
+    recent_date=$(
+        aws s3 ls "${src_data_path}"/submission_date_s3= |  # list all dates
+        grep -Eow '[0-9]+' |                                # extract words made of digits
+        tail -n1                                            # take the most recent
+    )
+    src_data_path="${src_data_path}/submission_date_s3=${recent_date}/"
+
     # List all available json samples.
     # ex: amiyaguchi/sanitized-landfill-sample/v2/submission_date_s3=20180529/namespace=telemetry/doc_type=anonymous/doc_version=4/*.json
     paths=$(
@@ -64,8 +72,8 @@ function sync_data {
         doc_version=$(echo "${path}" | cut -d'/' -f7 | cut -d'=' -f2)
 
         
-        namespace_dir="${data_path}/${namespace}"
-        filename="${submission_date}.${doc_type}.${doc_version}.batch.json"
+        namespace_dir="${data_path}/${submission_date}/${namespace}"
+        filename="${doc_type}.${doc_version}.batch.json"
         
         # make the system directory e.g. telemetry if not exists
         if [[ ! -d "${namespace_dir}" ]]; then

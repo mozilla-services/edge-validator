@@ -236,7 +236,7 @@ def integrate():
               default='net-mozaws-prod-us-west-2-pipeline-analysis',
               help="location of the s3 bucket")
 @click.option('--data-prefix', type=str,
-              default='amiyaguchi/sanitized-landfill-sample/v2',
+              default='amiyaguchi/sanitized-landfill-sample/v3',
               help="location of the sanitized-landfill-sample dataset")
 @click.option('--include-tests/--ignore-tests',
               default=True,

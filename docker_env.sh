@@ -8,6 +8,7 @@ report_path=$(pwd)/"test-reports"
 if [ ! -d "${report_path}" ]; then
     echo "Creating the report path: ${report_path}"
     mkdir -p "${report_path}"
+    mkdir -p "${report_path}/pytest"
 fi
 
 chown -R 10001:10001 ${report_path}

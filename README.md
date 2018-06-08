@@ -115,8 +115,11 @@ POST /submit/<namespace>/<docid>/<appName>/<appVersion>/<appUpdateChannel>/<appB
 #### Building from source
 ```bash
 # clone and set the working directory
-$ git clone https://github.com/acmiyaguchi/edge-validator.git
+$ git clone --recursive https://github.com/mozilla-services/edge-validator.git
 $ cd edge-validator
+
+# if the `--recursive` option was omitted, then update and initialize the submodule
+$ git submodule update --init
 
 # make sure that the system pip is up to date
 $ pip install --user --upgrade pip

@@ -14,8 +14,6 @@ import click
 import rapidjson as json
 import requests
 
-import app
-
 REPORT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -65,6 +63,7 @@ class Reporter(object):
 
             client = Client()
         else:
+            import app
             importlib.reload(app)
             app.app.config['TESTING'] = True
             client = app.app.test_client()
@@ -78,11 +77,8 @@ class Reporter(object):
         else:
             return resp.data.decode('utf-8')
 
-    def validate_sample(self, namespace, name, messages):
+    def validate_sample(self, namespace, doc_type, doc_version, messages):
         start = time.time()
-        submission, doc_type, doc_version = (
-            name.split('.batch.json')[0].split('.')
-        )
         errors = {}
         for msg in messages:
             route = '/submit/{}/{}'.format(namespace, doc_type)
@@ -114,15 +110,21 @@ class Reporter(object):
     @staticmethod
     def display(result):
         for doc_type, metric in result.items():
+            errors = metric['errors']
+            is_missing = (
+                errors and
+                len(errors) == 1 and
+                "Missing Schema" in list(errors.keys())[0]
+            )
             print(
-                "ErrorRate: {:.2f}%\t"
-                "Total: {}\t"
-                "Time: {:.1f} seconds\t"
-                "DocType: {}"
-                    .format(metric['error_rate'],
+                "DocType: {:<50}"
+                "ErrorRate: {:>5}\t"
+                "Total: {:>4}\t"
+                "Time: {:>.1f} seconds\t"
+                    .format(doc_type,
+                            "" if is_missing else metric['error_rate'],
                             metric['total'],
-                            metric['time'],
-                            doc_type)
+                            metric['time'])
             )
 
     @staticmethod
@@ -143,16 +145,23 @@ class Reporter(object):
     def run(self, data_path, report_path=None):
         test_results = {"results": dict()}
 
+        # Use the most recent data
+        submission_date = max(os.listdir(data_path))
+        data_path = os.path.join(data_path, submission_date)
+
         for root, _, files in os.walk(data_path):
             for name in files:
+                namespace = os.path.basename(root)
+                doc_type, doc_version = name.split('.batch.json')[0].split('.')
+
                 filename = os.path.join(root, name)
                 messages = []
                 with open(filename, 'r') as f:
                     for line in f:
                         content = json.loads(line).get('content', {})
                         messages.append(content)
-                namespace = os.path.basename(root)
-                result = self.validate_sample(namespace, name, messages)
+
+                result = self.validate_sample(namespace, doc_type, doc_version, messages)
                 self.display(result)
                 test_results["results"] = {**result, **test_results["results"]}
 
@@ -174,8 +183,8 @@ class Environment(object):
         return head.decode('utf-8')
 
     @staticmethod
-    def sync():
-        run(["bash", "sync.sh"])
+    def sync(env=os.environ):
+        run(["bash", "sync.sh"], env=env)
 
 
 def diff(json_a_path, json_b_path, output_path):
@@ -211,26 +220,80 @@ def diff(json_a_path, json_b_path, output_path):
 
 
 @click.group()
-def cli():
+def integrate():
+    """Tools for running a continuous schema integration loop."""
     pass
 
 
-@cli.command()
+@integrate.command('sync', short_help="synchronize remote resources")
+@click.option('--output-path', type=click.Path(file_okay=False),
+              default='resources/',
+              help="path to the application resource folder.")
+@click.option('--include-data/--ignore-data',
+              default=True,
+              help="fetch sampled data from a remote, performed by default")
+@click.option('--data-bucket', type=str,
+              default='net-mozaws-prod-us-west-2-pipeline-analysis',
+              help="location of the s3 bucket")
+@click.option('--data-prefix', type=str,
+              default='amiyaguchi/sanitized-landfill-sample/v3',
+              help="location of the sanitized-landfill-sample dataset")
+@click.option('--include-tests/--ignore-tests',
+              default=True,
+              help="add schemas from the testing directory")
+@click.option('--schema-root', type=click.Path(exists=True),
+              default='mozilla-pipeline-schemas',
+              help="path to a copy of the mozilla-pipeline-schemas repository")
+def sync_cmd(**kwargs):
+    """Synchronize local resources with remote data sources.
+
+    The sync command updates the application resource folder with data from
+    external sources. These resources are used by both the edge-validator and
+    the integration script.
+
+    Updates to mozilla-pipeline-schemas should be synchronized for application
+    visibility. Likewise, the integration report is tied closely with the
+    sanitized landfill sample data set, which is updated on a daily basis.
+
+    New external resources should be added to the synchronization process with
+    a clear focus on reproducibility.
+    """
+    # Backwards compatibility layer for `sync.sh`
+    options = {
+        'SRC_DATA_BUCKET': kwargs['data_bucket'],
+        'SRC_DATA_PREFIX': kwargs['data_prefix'],
+        'MPS_ROOT': kwargs['schema_root'],
+        'OUTPUT_PATH': kwargs['output_path'],
+        'INCLUDE_DATA': "true" if kwargs['include_data'] else "false",
+        'INCLUDE_TESTS': "true" if kwargs['include_tests'] else "false",
+    }
+    env = {**os.environ, **options}
+    Environment.sync(env)
+
+
+@integrate.command('report', short_help="collect metrics about errors in a data-set")
 @click.option('--data-path', type=click.Path(exists=True),
-              default='resources/data')
-@click.option('--report-path', type=click.Path(dir_okay=False))
-def report(data_path, report_path):
+              default='resources/data',
+              help="path to the the application data resources")
+@click.option('--report-path', type=click.Path(dir_okay=False),
+              help="path to store reports")
+def report_cmd(data_path, report_path):
     """Run an integration report against currently loaded schemas."""
     Reporter().run(data_path, report_path)
 
 
-@cli.command()
+@integrate.command('compare', short_help="compare schema errors across two revisions")
 @click.argument('rev-A')
 @click.argument('rev-B')
-@click.option('--data-path', type=click.Path(), default='resources/data')
-@click.option('--report-path', type=click.Path(file_okay=False), required=True)
-@click.option('--cache/--no-cache', default=True)
-def compare(rev_a, rev_b, data_path, report_path, cache):
+@click.option('--data-path', type=click.Path(),
+              default='resources/data',
+              help="path to the application data resources")
+@click.option('--report-path', type=click.Path(file_okay=False),
+              required=True,
+              help="path to store reports")
+@click.option('--cache/--no-cache', default=True,
+              help="utilize cached reports to speed up comparisons")
+def compare_cmd(rev_a, rev_b, data_path, report_path, cache):
     """Compare the results of two revisions of `mozilla-pipeline-schemas`."""
 
     if os.environ.get("EXTERNAL"):
@@ -263,4 +326,4 @@ def compare(rev_a, rev_b, data_path, report_path, cache):
 
 
 if __name__ == '__main__':
-    cli()
+    integrate()

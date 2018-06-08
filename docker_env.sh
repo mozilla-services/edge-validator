@@ -10,10 +10,10 @@ if [ ! -d "${report_path}" ]; then
     mkdir -p "${report_path}"
 fi
 
-sudo chown -R 10001:10001 ${report_path}
+chown -R 10001:10001 ${report_path}
 cleanup() {
   # recover ownership of the report folder
-  sudo chown -R $(id -u):$(id -g) ${report_path}
+  chown -R $(id -u):$(id -g) ${report_path}
 }
 trap cleanup EXIT
 

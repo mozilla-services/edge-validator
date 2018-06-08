@@ -20,10 +20,11 @@ RUN pip install pipenv
 WORKDIR /app
 RUN groupadd --gid 10001 app && \
     useradd --gid app --uid 10001 --home-dir /app app
-RUN chown -R app:app /app
 
 # Start the userland environment
 COPY . /app
+RUN chown -R app:app /app
+
 USER app
 ENV PATH="/app/.venv/bin:$PATH"
 

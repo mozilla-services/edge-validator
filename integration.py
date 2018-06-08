@@ -152,7 +152,11 @@ class Reporter(object):
         for root, _, files in os.walk(data_path):
             for name in files:
                 namespace = os.path.basename(root)
-                doc_type, doc_version = name.split('.batch.json')[0].split('.')
+                try:
+                    doc_type, doc_version = name.split('.batch.json')[0].split('.')
+                except ValueError:
+                    # the doc_type contains a period
+                    continue
 
                 filename = os.path.join(root, name)
                 messages = []
@@ -161,7 +165,10 @@ class Reporter(object):
                         content = json.loads(line).get('content', {})
                         messages.append(content)
 
-                result = self.validate_sample(namespace, doc_type, doc_version, messages)
+                try:
+                    result = self.validate_sample(namespace, doc_type, doc_version, messages)
+                except ValueError:
+                    continue
                 self.display(result)
                 test_results["results"] = {**result, **test_results["results"]}
 
@@ -178,7 +185,7 @@ class Environment(object):
     @staticmethod
     def current_revision():
         res = run(["git", "submodule", "foreach",
-                   "git", "rev-parse", "HEAD"], stdout=PIPE)
+                   "git", "rev-parse", "--abbrev-ref", "HEAD"], stdout=PIPE)
         head = res.stdout.split()[-1]
         return head.decode('utf-8')
 
@@ -219,7 +226,7 @@ def diff(json_a_path, json_b_path, output_path):
         f.write(output)
 
 
-@click.group()
+@click.group(chain=True)
 def integrate():
     """Tools for running a continuous schema integration loop."""
     pass

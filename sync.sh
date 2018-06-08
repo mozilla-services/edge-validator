@@ -71,7 +71,6 @@ function sync_data {
         doc_type=$(echo "${path}" | cut -d'/' -f6 | cut -d'=' -f2)
         doc_version=$(echo "${path}" | cut -d'/' -f7 | cut -d'=' -f2)
 
-        
         namespace_dir="${data_path}/${submission_date}/${namespace}"
         filename="${doc_type}.${doc_version}.batch.json"
         
@@ -81,7 +80,7 @@ function sync_data {
         fi
 
         # copy and overwrite any existing data
-        aws s3 cp "s3://${SRC_DATA_BUCKET}/${path}" "${namespace_dir}/${filename}"
+        aws s3 cp "s3://${SRC_DATA_BUCKET}/${path}" "${namespace_dir}/${filename}" || true
     done
 
     # cache metadata

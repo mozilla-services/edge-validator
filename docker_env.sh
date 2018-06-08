@@ -1,17 +1,17 @@
-#!/bin/bash
+#!/bin/sh
 
 IMAGE=${IMAGE:-"edge-validator:latest"}
 
 report_path=$(pwd)/"test-reports"
 
 # Create the output report directory if not exits.
-if [[ ! -d "${report_path}" ]]; then
+if [ ! -d "${report_path}" ]; then
     echo "Creating the report path: ${report_path}"
     mkdir -p "${report_path}"
 fi
 
 sudo chown -R 10001:10001 ${report_path}
-function cleanup {
+cleanup() {
   # recover ownership of the report folder
   sudo chown -R $(id -u):$(id -g) ${report_path}
 }
@@ -22,13 +22,14 @@ CMD=$1
 REV_A=$2
 REV_B=$3
 
-if [[ "$CMD" == "test" ]]; then
+
+if [ "$CMD" = "test" ]; then
     docker run \
         -v ${report_path}:/app/test-reports \
         -it ${IMAGE} pipenv run \
         python -m pytest --junitxml=test-reports/pytest/junit.xml tests/
-elif [[ "$CMD" == "compare" ]]; then
-    if [[ -z "$REV_A" || -z "$REV_B" ]]; then
+elif [ "$CMD" = "compare" ]; then
+    if [ -z "$REV_A" ] || [ -z "$REV_B" ]; then
         echo "Missing arguments REV_A or REV_B!" 1>&2
         exit 1
     fi

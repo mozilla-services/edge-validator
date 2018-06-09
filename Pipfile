@@ -5,13 +5,15 @@ name = "pypi"
 
 [packages]
 Flask = "*"
-python-rapidjson = "*"
+python-rapidjson = ">=0.6.0"
 dockerflow = "*"
 blinker = "*"
+click = "*"
 
 [dev-packages]
 pytest = "*"
 requests = "*"
+awscli = "*"
 
 [requires]
 python_version = "3.6"

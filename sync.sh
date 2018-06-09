@@ -13,7 +13,7 @@ set -euo pipefail
 
 # The environment must set up with the correct AWS credentials
 SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:-"net-mozaws-prod-us-west-2-pipeline-analysis"}
-SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v1"}
+SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v3"}
 MPS_ROOT=${MPS_ROOT:-"./mozilla-pipeline-schemas"}
 OUTPUT_PATH=${OUTPUT_PATH:-"resources"}
 INCLUDE_DATA=${INCLUDE_DATA:-"true"}
@@ -35,9 +35,17 @@ fi
 
 function sync_data {
     src_data_path="s3://${SRC_DATA_BUCKET}/${SRC_DATA_PREFIX}"
-    
+
+    # Use only the most recent data
+    recent_date=$(
+        aws s3 ls "${src_data_path}"/submission_date_s3= |  # list all dates
+        grep -Eow '[0-9]+' |                                # extract words made of digits
+        tail -n1                                            # take the most recent
+    )
+    src_data_path="${src_data_path}/submission_date_s3=${recent_date}/"
+
     # List all available json samples.
-    # ex: amiyaguchi/sanitized-landfill-sample/v1/system_id=telemetry/doc_type=anonymous/*.json
+    # ex: amiyaguchi/sanitized-landfill-sample/v2/submission_date_s3=20180529/namespace=telemetry/doc_type=anonymous/doc_version=4/*.json
     paths=$(
         aws s3 ls --recursive "$src_data_path" |  # recursively list all files
         grep .json |                              # find leaf nodes containing sampled documents
@@ -58,19 +66,21 @@ function sync_data {
             fi
         fi
 
-        system=$(echo "${path}" | cut -d'/' -f4 | cut -d'=' -f2)
-        doc_type=$(echo "${path}" | cut -d'/' -f5 | cut -d'=' -f2)
-        
-        system_dir="${data_path}/${system}"
-        filename="${doc_type}.batch.json"
+        submission_date=$(echo "${path}" | cut -d'/' -f4 | cut -d'=' -f2)
+        namespace=$(echo "${path}" | cut -d'/' -f5 | cut -d'=' -f2)
+        doc_type=$(echo "${path}" | cut -d'/' -f6 | cut -d'=' -f2)
+        doc_version=$(echo "${path}" | cut -d'/' -f7 | cut -d'=' -f2)
+
+        namespace_dir="${data_path}/${submission_date}/${namespace}"
+        filename="${doc_type}.${doc_version}.batch.json"
         
         # make the system directory e.g. telemetry if not exists
-        if [[ ! -d "${system_dir}" ]]; then
-           mkdir -p "${system_dir}"
+        if [[ ! -d "${namespace_dir}" ]]; then
+           mkdir -p "${namespace_dir}"
         fi
 
         # copy and overwrite any existing data
-        aws s3 cp "s3://${SRC_DATA_BUCKET}/${path}" "${system_dir}/${filename}"
+        aws s3 cp "s3://${SRC_DATA_BUCKET}/${path}" "${namespace_dir}/${filename}" || true
     done
 
     # cache metadata
@@ -94,12 +104,12 @@ function sync_schema {
         popd
     fi
 
-    cp --recursive --verbose "${src_schema_path}"/* "${schema_path}"/
+    rsync -avh "${src_schema_path}"/ "${schema_path}"/ --delete
 }
 
 function copy_test_schema {
     echo "Copying testing schemas"
-    cp --recursive --verbose "tests/resources/schemas"/* "${schema_path}"/
+    rsync -avh "tests/resources/schemas"/ "${schema_path}"/
 }
 
 sync_schema

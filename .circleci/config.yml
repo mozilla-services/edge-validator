@@ -40,6 +40,7 @@ jobs:
           key: v1-{{ .Branch }}-{{epoch}}
           paths:
             - /cache/docker.tar
+            - /app
 
   test:
     docker:
@@ -54,15 +55,29 @@ jobs:
 
       - run:
           name: Test Code
-          command: |
-            container_id="$(docker run -tid app:build)"
-            docker exec "${container_id}" pipenv run \
-                python -m pytest --junitxml=test-reports/junit.xml tests/
-            docker cp "${container_id}":/app/test-reports test-reports
-            docker stop "${container_id}"
-
+          command: IMAGE=app:build /app/docker_env.sh test
+      - store_artifacts:
+          path: test-reports
+          destination: test-results
       - store_test_results:
           path: test-reports
+
+  integrate:
+    docker:
+      - image: docker:18.02.0-ce
+    steps:
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{.Branch}}
+      - run:
+          name: Restore Docker image cache
+          command: docker load -i /cache/docker.tar
+      - run:
+          name: Run a comparison report
+          command: IMAGE=app:build /app/docker_env.sh compare dev master
+      - store_artifacts:
+          path: test-reports
+          destination: test-results
 
   deploy:
     docker:
@@ -103,6 +118,14 @@ workflows:
       - test:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
+
+      - integrate:
+          requires:
+            - build
+            - test
           filters:
             tags:
               only: /.*/

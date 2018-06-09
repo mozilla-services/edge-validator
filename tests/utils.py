@@ -13,7 +13,7 @@ GenericURISpec = namedtuple('GenericURISpec', [
 
 
 # See: https://docs.telemetry.mozilla.org/concepts/pipeline/http_edge_spec.html#postput-request
-TelemetryURISpec = namedtuple('GenericURISpec', [
+TelemetryURISpec = namedtuple('TelemetryURISpec', [
     'namespace',
     'docid',
     'doctype',

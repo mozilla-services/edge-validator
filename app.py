@@ -53,7 +53,7 @@ def load_data():
         for key in schemas[namespace].keys():
             doctype, docversion = key.split('.')
             # take the most recent version determined by string comparison
-            ns_version[doctype] = max(versions.get(doctype, '0'), docversion)
+            ns_version[doctype] = max(ns_version.get(doctype, '0'), docversion)
         versions[namespace] = ns_version
 
     return schemas, versions
@@ -98,8 +98,10 @@ def submit(namespace, doctype, docversion=None, **kwargs):
     try:
         docversion = docversion or SCHEMA_VERSIONS[namespace][doctype]
         key = "{}.{}".format(doctype, docversion)
-        NAMESPACE_SCHEMAS[namespace][key](request.data)
-    except (ValueError, KeyError) as e:
-        resp = ("BAD: {}".format(e), 400)
+        NAMESPACE_SCHEMAS[namespace][key](request.get_data())
+    except ValueError as e:
+        resp = ("Validation Error: {}".format(e), 400)
+    except KeyError as e:
+        resp = ("Missing Schema: {}".format(e), 400)
     return resp
 

@@ -3,105 +3,28 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from uuid import uuid4
 
+import pytest
 import rapidjson as json
 
 from .utils import GenericURISpec, build_route
 
-
-def test_generic_ingestion_ok(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test',
-                          docversion=1,
-                          docid=str(uuid4()))
+@pytest.mark.parametrize("namespace, doctype, docversion, docid, expected", [
+    ('testing', 'test', 1, str(uuid4()), 200),              # ok
+    ('testing', 'test', 1, None, 200),                      # omit doc_id
+    ('testing', 'test', 1, 'definitely-not-a-uuid', 404),   # invalid uuid docid
+    ('testing', 'test', None, None, 200),                   # omit version
+    ('testing', 'test', 999, None, 400),                    # nonexisting version
+    ('testing', 'test', 'v1', None, 404),                   # bad version
+    ('testing', None, None, None, 404),                     # omit type
+    ('testing', 'test-nonexisting-doctype', 1, None, 400),  # nonexisting type
+    ('test-nonexisting-namespace', 'test', 1, None, 400),   # nonexisting namespace
+])
+def test_generic_ingestion_ok(client, ping, namespace, doctype, docversion, docid, expected):
+    spec = GenericURISpec(namespace=namespace,
+                          doctype=doctype,
+                          docversion=docversion,
+                          docid=docid)
     rv = client.post(build_route(spec),
                      data=json.dumps(ping),
                      content_type='application/json')
-    assert rv.status_code == 200
-
-
-def test_generic_ingestion_omit_docid(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test',
-                          docversion=1,
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 200
-
-
-def test_generic_ingestion_invalid_uuid_docid(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test',
-                          docversion=1,
-                          docid='definitely-not-a-uuid')
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 404
-
-
-def test_generic_ingestion_omit_version(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test',
-                          docversion=None,
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 200
-
-
-def test_generic_ingestion_nonexisting_version(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test',
-                          docversion=999,
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 400
-
-
-def test_generic_ingestion_bad_version(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test',
-                          docversion='v1',
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 404
-
-
-def test_generic_ingestion_omit_type(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype=None,
-                          docversion=None,
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 404
-
-
-def test_generic_ingestion_nonexisting_type(client, ping):
-    spec = GenericURISpec(namespace='testing',
-                          doctype='test-nonexisting-doctype',
-                          docversion=1,
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 400
-
-
-def test_generic_ingestion_nonexisting_namespace(client, ping):
-    spec = GenericURISpec(namespace='test-nonexisting-namespace',
-                          doctype='test',
-                          docversion=1,
-                          docid=None)
-    rv = client.post(build_route(spec),
-                     data=json.dumps(ping),
-                     content_type='application/json')
-    assert rv.status_code == 400
+    assert rv.status_code == expected

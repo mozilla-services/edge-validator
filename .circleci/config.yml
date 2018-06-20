@@ -74,7 +74,7 @@ jobs:
           command: docker load -i /cache/docker.tar
       - run:
           name: Run a comparison report
-          command: IMAGE=app:build /app/docker_env.sh compare dev master
+          command: IMAGE=app:build /app/docker_env.sh compare dev dev
       - store_artifacts:
           path: test-reports
           destination: test-results

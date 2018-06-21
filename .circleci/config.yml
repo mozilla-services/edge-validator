@@ -55,12 +55,29 @@ jobs:
 
       - run:
           name: Test Code
-          command: IMAGE=app:build /app/test_docker.sh
+          command: IMAGE=app:build /app/docker_env.sh test
       - store_artifacts:
           path: test-reports
           destination: test-results
       - store_test_results:
           path: test-reports
+
+  integrate:
+    docker:
+      - image: docker:18.02.0-ce
+    steps:
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{.Branch}}
+      - run:
+          name: Restore Docker image cache
+          command: docker load -i /cache/docker.tar
+      - run:
+          name: Run a comparison report
+          command: IMAGE=app:build /app/docker_env.sh compare dev dev
+      - store_artifacts:
+          path: test-reports
+          destination: test-results
 
   deploy:
     docker:
@@ -101,6 +118,14 @@ workflows:
       - test:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
+
+      - integrate:
+          requires:
+            - build
+            - test
           filters:
             tags:
               only: /.*/

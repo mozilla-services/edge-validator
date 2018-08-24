@@ -11,7 +11,7 @@ See [bug 1452166](https://bugzilla.mozilla.org/show_bug.cgi?id=1452166) for moti
 Start the docker container to start the local service at `localhost:8000`.
 The following command will fetch the latest image from dockerhub.
 ```bash
-docker run -it mozilla/edge-validator:latest
+docker run -p 8000 -it mozilla/edge-validator:latest
 ```
 
 Simply POST to the endpoint to check if a document is valid.
@@ -43,7 +43,7 @@ It is possible to mount a set of local json-schemas by mounting a folder structu
 
 ```bash
 $ cd mozilla-pipeline-schemas
-$ docker run -v "$(pwd)"/schemas:/app/resources/schemas -it edge-validator
+$ docker run -p 8000 -v "$(pwd)"/schemas:/app/resources/schemas -it edge-validator
 ```
 
 ## User Guide
@@ -136,7 +136,7 @@ The docker environment is suitable for running a local service or for running an
 $ make shell
 
 # Alternatively
-$ docker run -it edge-validator:latest pipenv shell
+$ docker run -p 8000 -it edge-validator:latest pipenv shell
 ```
 
 If you don't require permanent changes to the engine itself, you may pull down a prebuilt docker image through
@@ -174,7 +174,7 @@ You may also run the tests in docker in the same way as CI.
 A `junit.xml` file is generated in a `test-reports` folder.
 
 ```bash
-IMAGE=edge-validator:latest ./test_docker.sh
+IMAGE=edge-validator:latest ./test_env.sh test
 ```
 
 # Running Integration Tests

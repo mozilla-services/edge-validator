@@ -13,7 +13,7 @@ build:
 	docker build -t edge-validator:latest .
 
 serve:
-	docker run -p 8000:8000 -it edge-validator:latest
+	docker run -e FLASK_ENV -p 8000:8000 -it edge-validator:latest
 
 shell:
 	docker run -p 8000:8000 -it edge-validator:latest pipenv shell

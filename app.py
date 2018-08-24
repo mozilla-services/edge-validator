@@ -28,7 +28,7 @@ def load_namespace(base, namespace):
             with open(os.path.join(root, name), "r") as f:
                 key = name.split(".schema.json")[0]
                 schemas[key] = rapidjson.Validator(f.read())
-                print("Registered {}.{} ".format(namespace, key))
+                app.logger.info("Registered {}.{} ".format(namespace, key))
     return schemas
 
 
@@ -103,5 +103,7 @@ def submit(namespace, doctype, docversion=None, **kwargs):
         resp = ("Validation Error: {}".format(e), 400)
     except KeyError as e:
         resp = ("Missing Schema: {}".format(e), 400)
+
+    app.logger.info(resp[0])
     return resp
 

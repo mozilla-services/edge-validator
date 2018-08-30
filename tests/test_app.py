@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import gzip
 from uuid import uuid4
 
 import pytest
@@ -49,9 +50,7 @@ def test_ping_omit_optional(client, ping, route):
     assert rv.status_code == 200
 
 
-def test_ping_wrong_type(client, ping, route):
-    ping["payload"]["baz"]
-    rv = client.post(route,
-                     data=json.dumps(ping),
-                     content_type='application/json')
+def test_ping_gzip_data(client, ping, route):
+    data = gzip.compress(json.dumps(ping).encode())
+    rv = client.post(route, data=data)
     assert rv.status_code == 200

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import zlib
 
 import rapidjson
 from flask import Flask, request
@@ -28,7 +29,7 @@ def load_namespace(base, namespace):
             with open(os.path.join(root, name), "r") as f:
                 key = name.split(".schema.json")[0]
                 schemas[key] = rapidjson.Validator(f.read())
-                print("Registered {}.{} ".format(namespace, key))
+                app.logger.info("Registered {}.{} ".format(namespace, key))
     return schemas
 
 
@@ -96,12 +97,20 @@ def submit(namespace, doctype, docversion=None, **kwargs):
     resp = ('OK', 200)
 
     try:
+        data = request.get_data()
+        try:
+            data = zlib.decompress(data, 16+zlib.MAX_WBITS)
+        except zlib.error:
+            pass
+
         docversion = docversion or SCHEMA_VERSIONS[namespace][doctype]
         key = "{}.{}".format(doctype, docversion)
-        NAMESPACE_SCHEMAS[namespace][key](request.get_data())
+        NAMESPACE_SCHEMAS[namespace][key](data)
     except ValueError as e:
         resp = ("Validation Error: {}".format(e), 400)
     except KeyError as e:
         resp = ("Missing Schema: {}".format(e), 400)
+
+    app.logger.info(resp[0])
     return resp
 

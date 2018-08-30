@@ -30,6 +30,14 @@ def test_telemetry_ingestion_ok(client, ping, default_values):
     assert rv.status_code == 200
 
 
+def test_telemetry_ingestion_append_version(client, ping, default_values):
+    spec = TelemetryURISpec(**default_values)
+    rv = client.post(build_route(spec) + "?v=4",
+                     data=json.dumps(ping),
+                     content_type='application/json')
+    assert rv.status_code == 200
+
+
 def test_generic_ingestion_omit_routes(client, ping, default_values):
     for key in default_values.keys():
         # create a new dictionary with the single key nulled out

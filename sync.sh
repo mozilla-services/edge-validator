@@ -41,6 +41,18 @@ if [[ ! -d "${schema_path}" ]]; then
     mkdir -p "${schema_path}"
 fi
 
+function path_tail {
+    # $1: path delimited by '/'
+    # $2: number of elements to keep from the tail
+    echo $(echo "$1" | rev | cut -d'/' -f-$2 | rev)
+}
+
+function get_path_value {
+    # $1: path delimited by '/' with elements 'KEY=VALUE'
+    # $2: index of value to parse from path
+    echo $(echo "$1" | cut -d'/' -f$2 | cut -d'=' -f2)
+}
+
 function sync_data {
     src_data_path="s3://${SRC_DATA_BUCKET}/${SRC_DATA_PREFIX}"
 
@@ -53,7 +65,7 @@ function sync_data {
     src_data_path="${src_data_path}/submission_date_s3=${recent_date}/"
 
     # List all available json samples.
-    # ex: amiyaguchi/sanitized-landfill-sample/v2/submission_date_s3=20180529/namespace=telemetry/doc_type=anonymous/doc_version=4/*.json
+    # ex: sanitized-landfill-sample/v3/submission_date_s3=20181212/namespace=telemetry/doc_type=anonymous/doc_version=4/*.json
     paths=$(
         $aws s3 ls --recursive "$src_data_path" |  # recursively list all files
         grep .json |                              # find leaf nodes containing sampled documents
@@ -74,10 +86,12 @@ function sync_data {
             fi
         fi
 
-        submission_date=$(echo "${path}" | cut -d'/' -f4 | cut -d'=' -f2)
-        namespace=$(echo "${path}" | cut -d'/' -f5 | cut -d'=' -f2)
-        doc_type=$(echo "${path}" | cut -d'/' -f6 | cut -d'=' -f2)
-        doc_version=$(echo "${path}" | cut -d'/' -f7 | cut -d'=' -f2)
+        # keep the last 5 components of the directory spec
+        spec=$(path_tail ${path} 5)
+        submission_date=$(get_path_value ${spec} 1)
+        namespace=$(get_path_value ${spec} 2)
+        doc_type=$(get_path_value ${spec} 3)
+        doc_version=$(get_path_value ${spec} 4)
 
         namespace_dir="${data_path}/${submission_date}/${namespace}"
         filename="${doc_type}.${doc_version}.batch.json"

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import pytest
 import docker
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -10,6 +11,10 @@ from pathlib import Path
 TEST_ACCESS_KEY = "testing-id"
 TEST_SECRET_KEY = "testing-key"
 
+if os.environ.get("CI"):
+    pytest.skip(
+        "skipping sync tests on CI due to docker dependencies", allow_module_level=True
+    )
 
 @pytest.fixture
 def minio():
@@ -44,11 +49,7 @@ def awscli(command, cwd=None):
 
 
 # directory depths d<k>
-@pytest.mark.parametrize("prefix", [
-    "d1/d2",
-    "d1/d2/d3",
-    "d1/d2/d3/d4"
-])
+@pytest.mark.parametrize("prefix", ["d1/d2", "d1/d2/d3", "d1/d2/d3/d4"])
 def test_synchronize(minio, tmp_path, prefix):
     cwd = Path(__file__).parent
 
@@ -81,7 +82,6 @@ def test_synchronize(minio, tmp_path, prefix):
     awscli(f"s3 cp {test_sample} {remote_path}")
     assert "long-hash.json" in awscli(f"s3 ls --recursive s3://{bucket}")
     print(awscli(f"s3 cp {remote_path} -"))
-
 
     sync = cwd.parent / "sync.sh"
     assert sync.exists()

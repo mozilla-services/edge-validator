@@ -4,7 +4,8 @@ IMAGE=${IMAGE:-"edge-validator:latest"}
 
 report_path=$(pwd)/"test-reports"
 
-container_id="$(docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -tid $IMAGE)"
+# disable tests on CI by checking for this environment variable.
+container_id="$(docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e CI=true -tid $IMAGE)"
 cleanup() {
     docker stop "${container_id}"
 }

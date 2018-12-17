@@ -14,6 +14,7 @@ click = "*"
 pytest = "*"
 requests = "*"
 awscli = "*"
+docker = "*"
 
 [requires]
 python_version = "3.6"

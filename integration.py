@@ -267,8 +267,8 @@ def sync_cmd(**kwargs):
     """
     # Backwards compatibility layer for `sync.sh`
     options = {
-        'SRC_DATA_BUCKET': kwargs['data_bucket'],
-        'SRC_DATA_PREFIX': kwargs['data_prefix'],
+        'SOURCE_DATA_BUCKET': kwargs['data_bucket'],
+        'SOURCE_DATA_PREFIX': kwargs['data_prefix'],
         'MPS_ROOT': kwargs['schema_root'],
         'OUTPUT_PATH': kwargs['output_path'],
         'INCLUDE_DATA': "true" if kwargs['include_data'] else "false",

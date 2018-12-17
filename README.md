@@ -174,7 +174,7 @@ You may also run the tests in docker in the same way as CI.
 A `junit.xml` file is generated in a `test-reports` folder.
 
 ```bash
-IMAGE=edge-validator:latest ./test_env.sh test
+IMAGE=edge-validator:latest ./docker_env.sh test
 ```
 
 # Running Integration Tests

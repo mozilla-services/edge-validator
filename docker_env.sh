@@ -15,10 +15,13 @@ CMD=$1
 REV_A=$2
 REV_B=$3
 
+# return code from docker command
+retval=0
 
 if [ "$CMD" = "test" ]; then
     docker exec "${container_id}" pipenv run \
         python -m pytest --junitxml=test-reports/pytest/junit.xml tests/
+    retval=$?
     docker cp "${container_id}":/app/test-reports .
 elif [ "$CMD" = "compare" ]; then
     if [ -z "$REV_A" ] || [ -z "$REV_B" ]; then
@@ -27,6 +30,7 @@ elif [ "$CMD" = "compare" ]; then
     fi
     docker exec "${container_id}" pipenv run \
         ./integration.py sync compare --report-path test-reports $REV_A $REV_B
+    retval=$?
     docker cp "${container_id}":/app/test-reports ${report_path}
 
     diff="${report_path}/${REV_A}-${REV_B}.diff"
@@ -37,4 +41,7 @@ elif [ "$CMD" = "compare" ]; then
     fi
 else
     echo "missing 'test' or 'compare'"
+    exit 1
 fi
+
+exit $retval

@@ -93,7 +93,7 @@ jobs:
       - run:
           name: Deploy to Dockerhub
           command: |
-            if  [ ! -z "${CIRCLE_TAG}" ]; then
+            if  [ -n "${CIRCLE_TAG}" ]; then
               # deploy a release tag...
               docker login -u $DOCKER_USER -p $DOCKER_PASS
               echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"

@@ -240,10 +240,10 @@ def integrate():
               default=True,
               help="fetch sampled data from a remote, performed by default")
 @click.option('--data-bucket', type=str,
-              default='net-mozaws-prod-us-west-2-pipeline-analysis',
+              default='telemetry-parquet',
               help="location of the s3 bucket")
 @click.option('--data-prefix', type=str,
-              default='amiyaguchi/sanitized-landfill-sample/v3',
+              default='sanitized-landfill-sample/v3',
               help="location of the sanitized-landfill-sample dataset")
 @click.option('--include-tests/--ignore-tests',
               default=True,

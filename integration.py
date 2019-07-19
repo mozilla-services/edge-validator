@@ -146,7 +146,11 @@ class Reporter(object):
         test_results = {"results": dict()}
 
         # Use the most recent data
-        submission_date = max(os.listdir(data_path))
+        date_like = [name for name in os.listdir(data_path) if name.isdigit()]
+        if not date_like:
+            raise RuntimeError("missing a data folder with submission date")
+
+        submission_date = max(date_like)
         data_path = os.path.join(data_path, submission_date)
 
         for root, _, files in os.walk(data_path):
@@ -171,6 +175,9 @@ class Reporter(object):
                     continue
                 self.display(result)
                 test_results["results"] = {**result, **test_results["results"]}
+
+        if not test_results["results"]:
+            raise ValueError("the result set is empty; try synchronizing data")
 
         if report_path:
             self.save(report_path, test_results)

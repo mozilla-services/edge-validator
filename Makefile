@@ -1,16 +1,17 @@
+.PHONY: build
+
+build:
+	docker build -t edge-validator:latest .
+
 sync:
 	pipenv sync --dev
-	INCLUDE_DATA=false bash sync.sh
+	pipenv run python integration.py sync --ignore-data
 
 test:
 	pipenv run python -m pytest tests/
 
 report:
-	INCLUDE_DATA=true bash sync.sh
-	pipenv run python integration.py report
-
-build:
-	docker build -t edge-validator:latest .
+	pipenv run python integration.py sync report
 
 serve:
 	docker run -e FLASK_ENV -p 8000:8000 -it edge-validator:latest

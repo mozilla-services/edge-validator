@@ -12,8 +12,8 @@ set -euo pipefail
 if [[ ! -z ${DEBUG:-} ]]; then set -x; fi
 
 # The environment must set up with the correct AWS credentials
-SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:-"net-mozaws-prod-us-west-2-pipeline-analysis"}
-SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:-"amiyaguchi/sanitized-landfill-sample/v3"}
+SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:?}
+SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:?}
 MPS_ROOT=${MPS_ROOT:-"./mozilla-pipeline-schemas"}
 OUTPUT_PATH=${OUTPUT_PATH:-"resources"}
 INCLUDE_DATA=${INCLUDE_DATA:-"true"}
@@ -67,10 +67,10 @@ function sync_data {
     # List all available json samples.
     # ex: sanitized-landfill-sample/v3/submission_date_s3=20181212/namespace=telemetry/doc_type=anonymous/doc_version=4/*.json
     paths=$(
-        $aws s3 ls --recursive "$src_data_path" |  # recursively list all files
-        grep .json |                              # find leaf nodes containing sampled documents
-        tr -s ' ' | cut -d ' ' -f4                # get the prefix for the json document
-                                                  # aws ls returns multiple spaces, so pass it through tr
+        $aws s3 ls --recursive "$src_data_path" |   # recursively list all files
+        tr -s ' ' |                                 # replace multiple spaces
+        cut -d ' ' -f4 |                            # get the column with the path
+        grep .json
     )
 
     echo "Updating local sampled data from ${src_data_path}"

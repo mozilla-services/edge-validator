@@ -35,7 +35,7 @@ def minio():
 
 def awscli(command, cwd=None):
     res = subprocess.run(
-        ["aws", "--endpoint-url", "http://localhost:9000"] + command.split(),
+        ["bash", "-c", f"aws --endpoint-url http://localhost:9000 {command}"],
         stdout=subprocess.PIPE,
         env={
             "AWS_ACCESS_KEY_ID": TEST_ACCESS_KEY,

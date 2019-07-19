@@ -12,7 +12,7 @@ EXPOSE $PORT
 
 # Bootstrap the system with root privileges
 RUN apt-get update && \
-    apt-get --yes install make git
+    apt-get --yes install make git rsync
 RUN pip install --upgrade pip
 RUN pip install pipenv
 

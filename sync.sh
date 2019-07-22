@@ -12,8 +12,6 @@ set -euo pipefail
 if [[ ! -z ${DEBUG:-} ]]; then set -x; fi
 
 # The environment must set up with the correct AWS credentials
-SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:?}
-SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:?}
 MPS_ROOT=${MPS_ROOT:-"./mozilla-pipeline-schemas"}
 OUTPUT_PATH=${OUTPUT_PATH:-"resources"}
 INCLUDE_DATA=${INCLUDE_DATA:-"true"}
@@ -54,6 +52,8 @@ function get_path_value {
 }
 
 function sync_data {
+    SRC_DATA_BUCKET=${SOURCE_DATA_BUCKET:?}
+    SRC_DATA_PREFIX=${SOURCE_DATA_PREFIX:?}
     src_data_path="s3://${SRC_DATA_BUCKET}/${SRC_DATA_PREFIX}"
 
     # Use only the most recent data

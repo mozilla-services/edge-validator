@@ -322,7 +322,8 @@ def compare_cmd(rev_a, rev_b, data_path, report_path, cache):
             return output_path
 
         Environment.checkout(rev)
-        Environment.sync()
+        # NOTE: this sync only copies schemas and uses cached data
+        Environment.sync({"INCLUDE_DATA": "false"})
         Reporter().run(data_path, output_path)
 
         return output_path

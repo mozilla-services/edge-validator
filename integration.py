@@ -146,7 +146,11 @@ class Reporter(object):
         test_results = {"results": dict()}
 
         # Use the most recent data
-        submission_date = max(os.listdir(data_path))
+        date_like = [name for name in os.listdir(data_path) if name.isdigit()]
+        if not date_like:
+            raise RuntimeError("missing a data folder with submission date")
+
+        submission_date = max(date_like)
         data_path = os.path.join(data_path, submission_date)
 
         for root, _, files in os.walk(data_path):
@@ -171,6 +175,9 @@ class Reporter(object):
                     continue
                 self.display(result)
                 test_results["results"] = {**result, **test_results["results"]}
+
+        if not test_results["results"]:
+            raise ValueError("the result set is empty; try synchronizing data")
 
         if report_path:
             self.save(report_path, test_results)
@@ -240,10 +247,10 @@ def integrate():
               default=True,
               help="fetch sampled data from a remote, performed by default")
 @click.option('--data-bucket', type=str,
-              default='net-mozaws-prod-us-west-2-pipeline-analysis',
+              default='telemetry-parquet',
               help="location of the s3 bucket")
 @click.option('--data-prefix', type=str,
-              default='amiyaguchi/sanitized-landfill-sample/v3',
+              default='sanitized-landfill-sample/v3',
               help="location of the sanitized-landfill-sample dataset")
 @click.option('--include-tests/--ignore-tests',
               default=True,
@@ -315,7 +322,8 @@ def compare_cmd(rev_a, rev_b, data_path, report_path, cache):
             return output_path
 
         Environment.checkout(rev)
-        Environment.sync()
+        # NOTE: this sync only copies schemas and uses cached data
+        Environment.sync({"INCLUDE_DATA": "false"})
         Reporter().run(data_path, output_path)
 
         return output_path

@@ -198,7 +198,7 @@ class Environment(object):
 
     @staticmethod
     def sync(env=os.environ):
-        run(["bash", "sync.sh"], env=env)
+        run(["bash", "bin/sync.sh"], env=env)
 
 
 def diff(json_a_path, json_b_path, output_path):

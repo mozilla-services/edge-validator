@@ -6,4 +6,3 @@ click
 requests
 
 pytest
-docker

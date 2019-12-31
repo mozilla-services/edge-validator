@@ -135,8 +135,10 @@ $ git submodule update --init
 # make sure that the system pip is up to date
 $ pip install --user --upgrade pip
 
-# install pipenv for managing the application environment
-$ pip install --user pipenv
+# install the dependencies into a virtual environment
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements.txt
 
 # bootstrap for test/report/serve
 $ make sync

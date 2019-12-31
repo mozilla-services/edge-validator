@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -155,9 +155,8 @@ class Reporter(object):
 
         for root, _, files in os.walk(data_path):
             for name in files:
-                namespace = os.path.basename(root)
                 try:
-                    doc_type, doc_version = name.split('.batch.json')[0].split('.')
+                    namespace, doc_type, doc_version = name.split('.ndjson')[0].split('.')
                 except ValueError:
                     # the doc_type contains a period
                     continue
@@ -165,9 +164,7 @@ class Reporter(object):
                 filename = os.path.join(root, name)
                 messages = []
                 with open(filename, 'r') as f:
-                    for line in f:
-                        content = json.loads(line).get('content', {})
-                        messages.append(content)
+                    messages = f.readlines()
 
                 try:
                     result = self.validate_sample(namespace, doc_type, doc_version, messages)

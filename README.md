@@ -151,7 +151,7 @@ any of the testing suites.
 make shell
 
 # Alternatively
-$ docker run -p 8000 -it edge-validator:latest pipenv shell
+$ docker run -p 8000 -it edge-validator:latest bash
 ```
 
 If you don't require permanent changes to the engine itself, you may pull down a
@@ -170,12 +170,9 @@ make serve                # start the service on localhost:8000
 
 #### serving via local host
 
-The docker host automates the following bootstrap process. `pipenv` should be
-installed on the host system.
+The docker host automates the following bootstrap process.
 
 ```bash
-pipenv shell              # enter the application environment
-pipenv sync               # update the environment
 flask run --port 8000     # run the application
 ```
 
@@ -201,10 +198,10 @@ IMAGE=edge-validator:latest ./docker_env.sh test
 
 An integration report gives a performance report based on sampled data.
 
-Ensure that the AWS cli is correctly configured.
+Ensure that the Google Cloud SDK is correctly configured.
 
 ```bash
-aws s3 ls s3://telemetry-test-bucket/
+bq show moz-fx-data-shared-prod:monitoring.document_sample_nonprod_v1
 ```
 
 Then run the report.

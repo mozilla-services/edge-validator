@@ -207,6 +207,9 @@ bq show moz-fx-data-shared-prod:monitoring.document_sample_nonprod_v1
 Then run the report.
 
 ```bash
+# export a google service account
+export GOOGLE_APPLICATION_CREDENTIALS=<path/to/credentials.json>
+
 # Run using the local app context
 make report
 
@@ -218,8 +221,8 @@ The report can also be run in Docker when given the correct permissions.
 
 ```bash
 docker run \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
+    -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/credentials \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials \
     -it edge-validator:latest \
     make report
 ```
@@ -227,5 +230,5 @@ docker run \
 You may also be interested in a machine consumable integration report.
 
 ```bash
-pipenv run ./integration.py report --report-path test-reports/integration.json
+integration.py report --report-path test-reports/integration.json
 ```

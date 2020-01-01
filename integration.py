@@ -243,12 +243,6 @@ def integrate():
 @click.option('--include-data/--ignore-data',
               default=True,
               help="fetch sampled data from a remote, performed by default")
-@click.option('--data-bucket', type=str,
-              default='telemetry-parquet',
-              help="location of the s3 bucket")
-@click.option('--data-prefix', type=str,
-              default='sanitized-landfill-sample/v3',
-              help="location of the sanitized-landfill-sample dataset")
 @click.option('--include-tests/--ignore-tests',
               default=True,
               help="add schemas from the testing directory")
@@ -271,8 +265,6 @@ def sync_cmd(**kwargs):
     """
     # Backwards compatibility layer for `sync.sh`
     options = {
-        'SOURCE_DATA_BUCKET': kwargs['data_bucket'],
-        'SOURCE_DATA_PREFIX': kwargs['data_prefix'],
         'MPS_ROOT': kwargs['schema_root'],
         'OUTPUT_PATH': kwargs['output_path'],
         'INCLUDE_DATA': "true" if kwargs['include_data'] else "false",

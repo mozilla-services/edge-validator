@@ -4,5 +4,6 @@ dockerflow
 blinker
 click
 requests
+google-cloud-bigquery
 
 pytest

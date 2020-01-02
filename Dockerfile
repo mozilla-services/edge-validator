@@ -33,4 +33,4 @@ RUN pip install -r requirements.txt
 
 USER app
 RUN make sync
-CMD pipenv run flask run --host 0.0.0.0 --port $PORT
+CMD flask run --host 0.0.0.0 --port $PORT

@@ -5,8 +5,13 @@ IMAGE=${IMAGE:-"edge-validator:latest"}
 report_path=$(pwd)/"test-reports"
 
 # disable tests on CI by checking for this environment variable.
-container_id="$(docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e CI=true -tid $IMAGE)"
+container_id="$(docker run \
+    -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/credentials \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials \
+    -e CI=true \
+    -tid $IMAGE)"
 cleanup() {
+    echo "Cleaning up!"
     docker stop "${container_id}"
 }
 trap cleanup EXIT
@@ -20,17 +25,19 @@ REV_B=$3
 retval=0
 
 if [ "$CMD" = "test" ]; then
-    docker exec "${container_id}" pipenv run \
-        python -m pytest --junitxml=test-reports/pytest/junit.xml tests/
+    docker exec "${container_id}" pytest --junitxml=test-reports/pytest/junit.xml tests/
     retval=$?
     docker cp "${container_id}":/app/test-reports .
 elif [ "$CMD" = "compare" ]; then
+    if [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+        echo "Missing GOOGLE_APPLICATION_CREDENTIALS"
+        exit 1
+    fi
     if [ -z "$REV_A" ] || [ -z "$REV_B" ]; then
         echo "Missing arguments REV_A or REV_B!" 1>&2
         exit 1
     fi
-    docker exec "${container_id}" pipenv run \
-        ./integration.py sync compare --report-path test-reports $REV_A $REV_B
+    docker exec "${container_id}" ./integration.py sync compare --report-path test-reports $REV_A $REV_B
     retval=$?
     docker cp "${container_id}":/app/test-reports ${report_path}
 

@@ -74,7 +74,10 @@ jobs:
           command: docker load -i /cache/docker.tar
       - run:
           name: Run a comparison report
-          command: IMAGE=app:build /app/docker_env.sh compare dev dev
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp.json"
+            echo "$GCLOUD_SERVICE_KEY" > "$GOOGLE_APPLICATION_CREDENTIALS"
+            IMAGE=app:build /app/docker_env.sh compare master master
       - store_artifacts:
           path: test-reports
           destination: test-results

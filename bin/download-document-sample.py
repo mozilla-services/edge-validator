@@ -2,13 +2,7 @@
 
 """Download samples of json documents from the decoded and error stream.
 This is meant for integration testing, and is easily inspected through the
-command-line. For example, to count the total number documents per group:
-
-  cat document_sample.ndjson | \
-  jq -rc '.attributeMap | [.document_namespace, .document_type, .document_version]' | \
-  uniq -c
-
-This script is modified from [1].
+command-line. This script is modified from [1].
 
 [1] https://github.com/mozilla/gcp-ingestion/blob/master/ingestion-beam/bin/download-document-sample.
 """

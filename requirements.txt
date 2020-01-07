@@ -1,0 +1,9 @@
+Flask
+python-rapidjson >=0.6.0
+dockerflow
+blinker
+click
+requests
+google-cloud-bigquery
+
+pytest

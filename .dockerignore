@@ -1,4 +1,6 @@
-.idea
-.pytest_cache
 /resources
 /test-reports
+venv/
+__pycache__/
+.vscode/
+.cache/

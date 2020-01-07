@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -155,9 +155,8 @@ class Reporter(object):
 
         for root, _, files in os.walk(data_path):
             for name in files:
-                namespace = os.path.basename(root)
                 try:
-                    doc_type, doc_version = name.split('.batch.json')[0].split('.')
+                    namespace, doc_type, doc_version = name.split('.ndjson')[0].split('.')
                 except ValueError:
                     # the doc_type contains a period
                     continue
@@ -165,9 +164,7 @@ class Reporter(object):
                 filename = os.path.join(root, name)
                 messages = []
                 with open(filename, 'r') as f:
-                    for line in f:
-                        content = json.loads(line).get('content', {})
-                        messages.append(content)
+                    messages = f.readlines()
 
                 try:
                     result = self.validate_sample(namespace, doc_type, doc_version, messages)
@@ -198,7 +195,7 @@ class Environment(object):
 
     @staticmethod
     def sync(env=os.environ):
-        run(["bash", "sync.sh"], env=env)
+        run(["bash", "bin/sync.sh"], env=env)
 
 
 def diff(json_a_path, json_b_path, output_path):
@@ -246,12 +243,6 @@ def integrate():
 @click.option('--include-data/--ignore-data',
               default=True,
               help="fetch sampled data from a remote, performed by default")
-@click.option('--data-bucket', type=str,
-              default='telemetry-parquet',
-              help="location of the s3 bucket")
-@click.option('--data-prefix', type=str,
-              default='sanitized-landfill-sample/v3',
-              help="location of the sanitized-landfill-sample dataset")
 @click.option('--include-tests/--ignore-tests',
               default=True,
               help="add schemas from the testing directory")
@@ -274,8 +265,6 @@ def sync_cmd(**kwargs):
     """
     # Backwards compatibility layer for `sync.sh`
     options = {
-        'SOURCE_DATA_BUCKET': kwargs['data_bucket'],
-        'SOURCE_DATA_PREFIX': kwargs['data_prefix'],
         'MPS_ROOT': kwargs['schema_root'],
         'OUTPUT_PATH': kwargs['output_path'],
         'INCLUDE_DATA': "true" if kwargs['include_data'] else "false",

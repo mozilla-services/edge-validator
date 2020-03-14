@@ -129,14 +129,13 @@ workflows:
               only: /.*/
 
       - integrate:
+          context: data-eng-circleci-tests
           requires:
             - build
             - test
           filters:
             tags:
               only: /.*/
-            branches:
-              ignore: /.*/
 
       - deploy:
           requires:

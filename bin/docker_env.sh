@@ -6,16 +6,17 @@ report_path=$(pwd)/"test-reports"
 
 # disable tests on CI by checking for this environment variable.
 container_id="$(docker run \
-    -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/credentials \
     -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials \
     -e CI=true \
     -tid $IMAGE)"
+
 cleanup() {
     echo "Cleaning up!"
     docker stop "${container_id}"
 }
 trap cleanup EXIT
 
+docker cp "$GOOGLE_APPLICATION_CREDENTIALS" "$container_id":/tmp/credentials
 
 CMD=$1
 REV_A=$2
